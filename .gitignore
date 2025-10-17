@@ -1,0 +1,6 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+
+# local database files
+*.sqlite3
