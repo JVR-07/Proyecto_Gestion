@@ -101,5 +101,3 @@ El sistema se diseñará como una plataforma centralizada que integrará en un m
 | No. Versión | Fecha | Observaciones |
 | :---- | :---- | :---- |
 | 1.0 | 02/09/2025 | Agregar más diagramas, revisar restricciones, añadir tabla de control de versiones y tabla de autorización |
-|  |  |  |
-|  |  |  |
