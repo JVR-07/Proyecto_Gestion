@@ -136,3 +136,31 @@ body.post-feed-body {
 .post-interaction button:hover {
     background: #0096c7;
 }
+
+.messages {
+    padding: 0;
+    margin-bottom: 20px;
+    list-style: none;
+}
+.messages .message {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+}
+.messages .message.success {
+    background: rgba(144, 190, 109, 0.3); /* Verde */
+    border: 1px solid #90be6d;
+    color: #fff;
+}
+.messages .message.warning {
+    background: rgba(249, 199, 79, 0.3); /* Amarillo */
+    border: 1px solid #f9c74f;
+    color: #fff;
+}
+.messages .message.error {
+    background: rgba(255, 138, 128, 0.3); /* Rojo */
+    border: 1px solid #ff8a80;
+    color: #fff;
+}

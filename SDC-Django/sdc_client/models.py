@@ -2,7 +2,6 @@ from django.db import models, transaction as db_transaction
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 from django.conf import settings
-# from .models import Warehouse, InventoryItem, Post, Category
 
 # Create your models here.
 
@@ -228,49 +227,133 @@ class Transaction(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def approve_and_update_inventory(self, warehouse):
+    def approve_transaction(self, warehouse=None):
         """
-        Aprueba esta transacción y actualiza el inventario 
-        en el almacén (warehouse) especificado.
+        Aprueba la transacción aplicando la lógica de negocio correspondiente. 
+        'warehouse' es opcional. Solo se usa si la lógica implica mover stock del inventario.
         """
+        # --- Imports locales para evitar dependencia circular ---
+        from .models import Donor, Donee, Institution, InventoryItem, Post
 
+        # Inicia una transacción de base de datos
         with db_transaction.atomic():
-            
-            # No hacer nada si ya estaba aprobada
+
+            # Validar que no esté ya aprobada
             if self.status == self.TransactionStatus.APPROVED:
                 raise Exception("Esta transacción ya fue aprobada.")
 
-            # Obtener los datos necesarios
-            category = self.post.category
-            quantity_to_commit = self.quantity_committed
+            # Obtener los perfiles de los involucrados
+            participant_user = self.participant
+            author_user = self.post.author
+
+            def get_profile_type(user):
+                try:
+                    if user.donor: return 'donor'
+                except Donor.DoesNotExist:
+                    try:
+                        if user.donee: return 'donee'
+                    except Donee.DoesNotExist:
+                        try:
+                            if user.institution: return 'institution'
+                        except Institution.DoesNotExist:
+                            return 'admin' # Admin o sin perfil
+
+            participant_type = get_profile_type(participant_user)
+            author_type = get_profile_type(author_user)
+
+            # Obtener datos de la transacción
             post_type = self.post.post_type
+            category = self.post.category
+            quantity = self.quantity_committed
 
-            # Obtener el item de inventario
-            inventory_item, created = InventoryItem.objects.get_or_create(
-                warehouse=warehouse,
-                category=category,
-                defaults={'quantity': 0} # Inicia en 0 si es nuevo
-            )
+            # --- APLICAR LÓGICA DE NEGOCIO ---
 
-            # Aplicar la logica de negocio 
-            if post_type == Post.PostType.OFFER:
-                # Si es una OFERTA (donación ENTRANTE), suma al inventario
-                inventory_item.quantity += quantity_to_commit
+            # Caso: Donador -> Donatario (Personal, sin inventario)
+            # (Post es 'REQUEST', Autor es 'donee', Participante es 'donor')
+            if post_type == Post.PostType.REQUEST and author_type == 'donee' and participant_type == 'donor':
+                self.status = self.TransactionStatus.APPROVED
+                self.save()
+                return "Aprobación personal (Donador a Donatario) completada. Sin cambio de inventario."
+
+            # Caso: Donatario -> Donador (Personal, sin inventario)
+            # (Post es 'OFFER', Autor es 'donor', Participante es 'donee')
+            elif post_type == Post.PostType.OFFER and author_type == 'donor' and participant_type == 'donee':
+                self.status = self.TransactionStatus.APPROVED
+                self.save()
+                return "Aprobación personal (Donatario acepta de Donador) completada. Sin cambio de inventario."
+
+            # Caso: Donador -> Institución (Añadir a inventario)
+            # (Post es 'REQUEST' (campaña), Autor es 'institution', Participante es 'donor')
+            elif post_type == Post.PostType.REQUEST and author_type == 'institution' and participant_type == 'donor':
+                if not warehouse:
+                    raise Exception("Se requiere un almacén de destino para esta donación.")
+
+                inventory_item, _ = InventoryItem.objects.get_or_create(
+                    warehouse=warehouse, category=category, defaults={'quantity': 0}
+                )
+                inventory_item.quantity += quantity
+                inventory_item.save()
+                self.status = self.TransactionStatus.APPROVED
+                self.save()
+                return f"Donación de {quantity} de {category.name} registrada en almacén '{warehouse.name}'."
             
-            elif post_type == Post.PostType.REQUEST:
-                # Si es una SOLICITUD (donación SALIENTE), resta del inventario
-                if inventory_item.quantity < quantity_to_commit:
+            # Caso: Institución -> Donador (Añadir a inventario)
+            # (Post es 'OFFER', Autor es 'donor', Participante es 'institution') 
+            elif post_type == Post.PostType.OFFER and author_type == 'donor' and participant_type == 'institution':
+                if not warehouse:
+                    raise Exception("Se requiere un almacén de destino para recibir la donación.")
+
+                inventory_item, _ = InventoryItem.objects.get_or_create(
+                    warehouse=warehouse, category=category, defaults={'quantity': 0}
+                )
+                
+                inventory_item.quantity += quantity # SUMA AL INVENTARIO
+                inventory_item.save()
+                self.status = self.TransactionStatus.APPROVED
+                self.save()
+                return f"Ingreso de {quantity} de {category.name} registrado en almacén '{warehouse.name}' proveniente de Donador."
+
+            # Caso: Institución -> Donatario (Disminuir inventario)
+            # (Post es 'REQUEST', Autor es 'donee', Participante es 'institution')
+            elif post_type == Post.PostType.REQUEST and author_type == 'donee' and participant_type == 'institution':
+                if not warehouse:
+                    raise Exception("Se requiere un almacén de origen para esta donación de ONG a Donatario.")
+                
+                inventory_item, _ = InventoryItem.objects.get_or_create(
+                    warehouse=warehouse, category=category, defaults={'quantity': 0}
+                )
+                
+                # REVISA STOCK ANTES DE RESTAR
+                if inventory_item.quantity < quantity:
+                    raise Exception(f"Stock insuficiente de {category.name} en el almacén para cubrir la donación.")
+
+                inventory_item.quantity -= quantity # RESTA DEL INVENTARIO
+                inventory_item.save()
+                self.status = self.TransactionStatus.APPROVED
+                self.save()
+                return f"Retiro de {quantity} de {category.name} registrado de almacén '{warehouse.name}' para Donatario."
+
+            # Caso: Donatario -> Institución (Disminuir inventario)
+            # (Post es 'OFFER', Autor es 'institution', Participante es 'donee')
+            elif post_type == Post.PostType.OFFER and author_type == 'institution' and participant_type == 'donee':
+                if not warehouse:
+                    raise Exception("Se requiere un almacén de origen para este retiro.")
+
+                inventory_item, _ = InventoryItem.objects.get_or_create(
+                    warehouse=warehouse, category=category, defaults={'quantity': 0}
+                )
+                if inventory_item.quantity < quantity:
                     raise Exception(f"Stock insuficiente de {category.name} en {warehouse.name}.")
-                inventory_item.quantity -= quantity_to_commit
-            
-            # Guardar los cambios
-            inventory_item.save()
-            self.status = self.TransactionStatus.APPROVED
-            self.save()
-            
-            # (TODO): Actualizar el estado del Post si ya se completó
-            # ... (lógica futura) ...
-            
+
+                inventory_item.quantity -= quantity
+                inventory_item.save()
+                self.status = self.TransactionStatus.APPROVED
+                self.save()
+                return f"Retiro de {quantity} de {category.name} registrado de almacén '{warehouse.name}'."
+
+            else:
+                raise Exception(f"Lógica no definida (Autor: {author_type}, Participante: {participant_type}, Tipo: {post_type}).")
+
     def __str__(self):
         return f"{self.participant.email} -> {self.post.title}"
 

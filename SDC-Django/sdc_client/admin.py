@@ -20,45 +20,55 @@ class InventoryItemAdmin(admin.ModelAdmin):
     list_filter = ('warehouse', 'category')
     search_fields = ('category__name', 'warehouse__name')
 
-@admin.action(description='Aprobar transacciones y actualizar inventario (Almacén Principal)')
-def approve_selected_transactions(modeladmin, request, queryset):
+@admin.action(description='Aprobar (Personal - Sin Inventario)')
+def approve_personal_transaction(modeladmin, request, queryset):
     """
-    Acción de Admin para aprobar transacciones pendientes.
+    Acción: Aprueba transacciones sin afectar inventario.
     """
-    # Simplificación: Asumimos que todo va al primer almacén.
-    # TODO: Crear una página intermedia para que el admin ELIJA el almacén.
+    pending = queryset.filter(status=Transaction.TransactionStatus.PENDING)
+    count = 0
+    for transaction in pending:
+        try:
+            # Llama al nuevo método SIN almacén
+            msg = transaction.approve_transaction(warehouse=None)
+            count += 1
+            messages.success(request, f'"{transaction}": {msg}')
+        except Exception as e:
+            messages.error(request, f'Error al aprobar "{transaction}": {e}')
+
+@admin.action(description='Aprobar y Mover a/de (Almacén Principal)')
+def approve_warehouse_transaction(modeladmin, request, queryset):
+    """
+    Acción: Aprueba transacciones afectando el inventario.
+    Se usa el primer almacén disponible.
+    (TODO): Permitir seleccionar almacén en el futuro.
+    """
     try:
         warehouse = Warehouse.objects.first()
         if not warehouse:
-            raise Exception("No hay almacenes registrados.")
-        
-        approved_count = 0
-        # Solo intentar aprobar las que están PENDIENTES
-        pending_transactions = queryset.filter(status=Transaction.TransactionStatus.PENDING)
-        
-        for transaction in pending_transactions:
+            raise Exception("No hay almacenes registrados. Cree uno primero.")
+
+        pending = queryset.filter(status=Transaction.TransactionStatus.PENDING)
+
+        for transaction in pending:
             try:
-                transaction.approve_and_update_inventory(warehouse)
-                approved_count += 1
+                # Llama al nuevo método CON el almacén
+                msg = transaction.approve_transaction(warehouse=warehouse)
+                messages.success(request, f'"{transaction}": {msg}')
             except Exception as e:
-                # Reportar error por transacción
                 messages.error(request, f'Error al aprobar "{transaction}": {e}')
-        
-        if approved_count > 0:
-            messages.success(request, f'{approved_count} transacciones aprobadas y añadidas a "{warehouse.name}".')
 
     except Exception as e:
         messages.error(request, f'Error general: {e}')
-
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ('post', 'participant', 'status', 'quantity_committed', 'created_at')
     list_filter = ('status', 'post__category')
     search_fields = ('post__title', 'participant__email')
-    
-    # Añadimos la acción al admin
-    actions = [approve_selected_transactions]
+
+    # agregar las acciones personalizadas
+    actions = [approve_personal_transaction, approve_warehouse_transaction]
 
 
 admin.site.register(CustomUser)
