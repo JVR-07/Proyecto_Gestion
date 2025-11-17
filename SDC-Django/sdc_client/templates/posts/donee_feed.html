@@ -10,6 +10,14 @@
 <body class="post-feed-body">
 
     <div class="feed-container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="message {{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
         <div class="feed-header">
             <h1>Bienvenido, Donatario</h1>
             <a href="{% url 'create_post' %}" class="btn-create">Crear Solicitud</a>
@@ -21,12 +29,16 @@
                 <div class="post-card">
                     <div class="post-meta">
                         <span class="meta-tag status">{{ post.get_status_display }}</span>
+                        <span class="meta-tag">
+                            Total: {{ post.quantity|floatformat:0 }} | 
+                            Aprobado: {{ post.quantity_approved|floatformat:0 }} | 
+                            Pendiente: {{ post.quantity_pending|floatformat:0 }}
+                        </span>
                     </div>
                     <h3>{{ post.title }}</h3>
                     <p>{{ post.description }}</p>
                     <div class="post-meta">
                         <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-                        <span class="meta-tag">Cantidad: {{ post.quantity }}</span>
                     </div>
                 </div>
             {% empty %}
@@ -51,15 +63,24 @@
                     <div class="post-meta">
                         <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
                         <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-                        <span class="meta-tag">Ofrece: {{ post.quantity }}</span>
+                        <span class="meta-tag">Total Ofrecido: {{ post.quantity|floatformat:0 }}</span>
+                        <span class="meta-tag type-offer">Aprobado: {{ post.quantity_approved|floatformat:0 }}</span>
+                        <span class="meta-tag type-request">Pendiente: {{ post.quantity_pending|floatformat:0 }}</span>
                     </div>
                     
                     <div class="post-interaction">
-                        <form method="POST" action=""> {# TODO: Crear URL para 'Transaction' #}
-                            {% csrf_token %}
-                            <input type="number" name="quantity_committed" placeholder="Cantidad a solicitar" min="0.01" step="0.01">
-                            <button type="submit">¡Estoy interesado!</button>
-                        </form>
+                        {% if post.quantity_remaining > 0 %}
+                            <form method="POST" action="{% url 'create_transaction' post.id %}">
+                                {% csrf_token %}
+                                <input type="number" name="quantity_committed" 
+                                       placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }}" 
+                                       min="0.01" step="0.01" 
+                                       max="{{ post.quantity_remaining|floatformat:2 }}" required>
+                                <button type="submit">¡Estoy interesado!</button>
+                            </form>
+                        {% else %}
+                            <p style="color: #90be6d; font-weight: 500;">¡Esta oferta ya no tiene stock disponible!</p>
+                        {% endif %}
                     </div>
                 </div>
             {% empty %}
