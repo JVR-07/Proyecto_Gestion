@@ -37,12 +37,16 @@
                         {% if post.is_campaign %}
                             <span class="meta-tag status">CAMPAÑA</span>
                         {% endif %}
+                         <span class="meta-tag">
+                            Total: {{ post.quantity|floatformat:0 }} | 
+                            Aprobado: {{ post.quantity_approved|floatformat:0 }} | 
+                            Pendiente: {{ post.quantity_pending|floatformat:0 }}
+                        </span>
                     </div>
                     <h3>{{ post.title }}</h3>
                     <p>{{ post.description }}</p>
                     <div class="post-meta">
                         <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-                        <span class="meta-tag">Cantidad: {{ post.quantity }}</span>
                     </div>
                 </div>
             {% empty %}
@@ -71,15 +75,24 @@
                     <div class="post-meta">
                         <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
                         <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-                        <span class="meta-tag">Cantidad: {{ post.quantity }}</span>
+                        <span class="meta-tag">Cantidad Total: {{ post.quantity|floatformat:0 }}</span>
+                        <span class="meta-tag type-offer">Aprobado: {{ post.quantity_approved|floatformat:0 }}</span>
+                        <span class="meta-tag type-request">Pendiente: {{ post.quantity_pending|floatformat:0 }}</span>
                     </div>
                     
                     <div class="post-interaction">
-                        <form method="POST" action="{% url 'create_transaction' post.id %}">
-                            {% csrf_token %}
-                            <input type="number" name="quantity_committed" placeholder="Cantidad" min="0.01" step="0.01">
-                            <button type="submit">Interactuar</button>
-                        </form>
+                        {% if post.quantity_remaining > 0 %}
+                            <form method="POST" action="{% url 'create_transaction' post.id %}">
+                                {% csrf_token %}
+                                <input type="number" name="quantity_committed" 
+                                       placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }}" 
+                                       min="0.01" step="0.01" 
+                                       max="{{ post.quantity_remaining|floatformat:2 }}" required>
+                                <button type="submit">Interactuar</button>
+                            </form>
+                        {% else %}
+                            <p style="color: #f9c74f; font-weight: 500;">¡Esta publicación ya está cubierta!</p>
+                        {% endif %}
                     </div>
                 </div>
             {% empty %}
