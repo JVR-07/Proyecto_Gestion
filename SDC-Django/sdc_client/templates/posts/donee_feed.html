@@ -55,7 +55,7 @@
                     </div>
                     
                     <div class="post-interaction">
-                        <form method="POST" action=""> {# TODO: Crear URL para 'Transaction' #}
+                        <form method="POST" action="{% url 'create_transaction' post.id %}">
                             {% csrf_token %}
                             <input type="number" name="quantity_committed" placeholder="Cantidad a solicitar" min="0.01" step="0.01">
                             <button type="submit">¡Estoy interesado!</button>

@@ -1,8 +1,6 @@
-# SDC-Django/sdc_client/views.py
-
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db import transaction # Para asegurar que User y Perfil se creen juntos
+from django.db import transaction, IntegrityError
 from django.contrib.auth import authenticate, login # Para Login
 from django.contrib.auth.decorators import login_required # Decorador para proteger vistas
 from django.http import JsonResponse
@@ -11,7 +9,7 @@ import json
 # --- FORMULARIOS ---
 from .forms import PersonRegistrationForm, InstitutionRegistrationForm, PostForm
 # --- MODELOS ---
-from .models import CustomUser, Donee, Donor, Institution, Post, Category
+from .models import CustomUser, Donee, Donor, Institution, Post, Transaction
 
 # Importaciones para JWT y Vistas de API (para el login)
 from rest_framework.decorators import api_view, permission_classes
@@ -131,6 +129,41 @@ def institution_feed(request):
         'feed_title': 'Actividad de la Comunidad'
     }
     return render(request, 'posts/institution_feed.html', context)
+
+@login_required
+def create_transaction(request, post_id):
+    # Solo permitimos peticiones POST
+    if request.method == 'POST':
+        post = get_object_or_404(Post, id=post_id)
+        
+        # Evitar que el autor interactúe con su propio post
+        if post.author == request.user:
+            messages.error(request, 'No puedes interactuar con tu propia publicación.')
+            return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+        try:
+            quantity = request.POST.get('quantity_committed')
+            if not quantity or float(quantity) <= 0:
+                messages.error(request, 'Debes proveer una cantidad válida.')
+                return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+            # Crear la transacción en estado PENDIENTE
+            Transaction.objects.create(
+                post=post,
+                participant=request.user,
+                quantity_committed=quantity,
+                status=Transaction.TransactionStatus.PENDING 
+            )
+            messages.success(request, '¡Tu interés ha sido registrado! Un administrador lo revisará.')
+        
+        except IntegrityError:
+            messages.warning(request, 'Ya tienes una interacción pendiente en esta publicación.')
+        except Exception as e:
+            messages.error(request, f'Ocurrió un error: {e}')
+
+    # Redirigir de vuelta a la página de donde venía
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
 
 # --- Lógica de Registro (Backend) ---
 

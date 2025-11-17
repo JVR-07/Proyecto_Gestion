@@ -1,10 +1,10 @@
-from django.db import models
+from django.db import models, transaction as db_transaction
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 from django.conf import settings
+# from .models import Warehouse, InventoryItem, Post, Category
 
 # Create your models here.
-
 
 # --- Manager para Usuario Personalizado ---
 
@@ -228,5 +228,103 @@ class Transaction(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def approve_and_update_inventory(self, warehouse):
+        """
+        Aprueba esta transacción y actualiza el inventario 
+        en el almacén (warehouse) especificado.
+        """
+
+        with db_transaction.atomic():
+            
+            # No hacer nada si ya estaba aprobada
+            if self.status == self.TransactionStatus.APPROVED:
+                raise Exception("Esta transacción ya fue aprobada.")
+
+            # Obtener los datos necesarios
+            category = self.post.category
+            quantity_to_commit = self.quantity_committed
+            post_type = self.post.post_type
+
+            # Obtener el item de inventario
+            inventory_item, created = InventoryItem.objects.get_or_create(
+                warehouse=warehouse,
+                category=category,
+                defaults={'quantity': 0} # Inicia en 0 si es nuevo
+            )
+
+            # Aplicar la logica de negocio 
+            if post_type == Post.PostType.OFFER:
+                # Si es una OFERTA (donación ENTRANTE), suma al inventario
+                inventory_item.quantity += quantity_to_commit
+            
+            elif post_type == Post.PostType.REQUEST:
+                # Si es una SOLICITUD (donación SALIENTE), resta del inventario
+                if inventory_item.quantity < quantity_to_commit:
+                    raise Exception(f"Stock insuficiente de {category.name} en {warehouse.name}.")
+                inventory_item.quantity -= quantity_to_commit
+            
+            # Guardar los cambios
+            inventory_item.save()
+            self.status = self.TransactionStatus.APPROVED
+            self.save()
+            
+            # (TODO): Actualizar el estado del Post si ya se completó
+            # ... (lógica futura) ...
+            
     def __str__(self):
         return f"{self.participant.email} -> {self.post.title}"
+
+# --- Modelos de Inventario ---
+
+class Warehouse(models.Model):
+    """
+    Representa un almacén o centro de acopio físico.
+    """
+    name = models.CharField(max_length=255, unique=True)
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    
+    # Podríamos asignar un admin (CustomUser) como encargado
+    manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="managed_warehouses"
+    )
+
+    def __str__(self):
+        return self.name
+
+class InventoryItem(models.Model):
+    """
+    Representa la cantidad de una categoría de producto
+    en un almacén específico.
+    """
+    warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.CASCADE,
+        related_name="inventory_items"
+    )
+    # Vinculamos el inventario a las Categorías que ya creamos
+    category = models.ForeignKey(
+        Category, 
+        on_delete=models.PROTECT, # No borrar una categoría si hay stock
+        related_name="inventory_items"
+    )
+    quantity = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.0
+    )
+    
+    # Fecha de la última actualización de este artículo
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Evita duplicados"
+        unique_together = ('warehouse', 'category')
+
+    def __str__(self):
+        return f"{self.quantity} de {self.category.name} en {self.warehouse.name}"
