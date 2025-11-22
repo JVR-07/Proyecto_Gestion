@@ -19,8 +19,13 @@
         {% endif %}
         
         <div class="feed-header">
-            <h1>Bienvenido, Donador</h1>
-            <a href="{% url 'create_post' %}" class="btn-create">Crear Oferta</a>
+            <h1>Bienvenido, Donador</h1> <div style="display: flex; gap: 10px;">
+                <a href="{% url 'create_post' %}" class="btn-create">Crear Oferta</a>
+                
+                <button onclick="handleLogout('{% url 'logout' %}')" class="btn-create" style="background-color: #e63946;">
+                    Salir
+                </button>
+            </div>
         </div>
 
         <section class="post-section">
