@@ -1,7 +1,7 @@
 import re
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Post, Category
+from .models import Post, Category, MeasurementUnit
 
 # --- Funciones de Validación Reutilizables ---
 
@@ -110,7 +110,7 @@ class PostForm(forms.ModelForm):
     Formulario para crear nuevas publicaciones.
     Muestra campos adicionales si el usuario es una Institución.
     """
-    # Nuevo campo para tipo de publicación
+    # Campo para tipo de publicación
     post_type = forms.ChoiceField(
         label="Tipo de Publicación",
         choices=Post.PostType.choices,
@@ -133,6 +133,14 @@ class PostForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    # Campo para unidad de medida
+    unit = forms.ModelChoiceField(
+        queryset=MeasurementUnit.objects.all(),
+        label="Unidad de Medida",
+        empty_label="Selecciona una unidad",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     class Meta:
         model = Post
         # --- Añadir los nuevos campos al 'fields' ---
@@ -143,6 +151,7 @@ class PostForm(forms.ModelForm):
             'description', 
             'category', 
             'quantity',
+            'unit',
         ]
         labels = {
             'title': 'Título de la publicación',
@@ -177,3 +186,20 @@ class PostForm(forms.ModelForm):
         if not is_institution:
             del self.fields['post_type']
             del self.fields['is_campaign']
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        quantity = cleaned_data.get('quantity')
+        unit = cleaned_data.get('unit')
+        is_campaign = cleaned_data.get('is_campaign')
+        
+        # Si hay cantidad y unidad, validamos el límite
+        if quantity and unit:
+            limit = unit.max_limit_normal
+            
+            # LÓGICA: Si NO es campaña y la cantidad supera el límite
+            if not is_campaign and quantity > limit:
+                self.add_error('quantity', f"El límite para {unit.name} en publicaciones normales es de {limit} {unit.symbol}. (Tu intentaste: {quantity})")
+                self.add_error('is_campaign', "Considera crear una campaña masiva si eres una Institución.")
+        
+        return cleaned_data

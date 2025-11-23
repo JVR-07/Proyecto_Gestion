@@ -3,7 +3,8 @@ from django.contrib import admin, messages
 # Modulos creados por nosotros
 from .models import (
     Status, CustomUser, Donee, Donor, Institution,
-    Category, Post, Transaction, Warehouse, InventoryItem
+    Category, Post, Transaction, Warehouse, InventoryItem,
+    MeasurementUnit
 )
 
 # Register your models here.
@@ -79,3 +80,8 @@ admin.site.register(Institution)
 admin.site.register(Category)
 admin.site.register(Post)
 # admin.site.register(Transaction)
+
+@admin.register(MeasurementUnit)
+class MeasurementUnitAdmin(admin.ModelAdmin):
+    list_display = ('name', 'symbol', 'max_limit_normal')
+    search_fields = ('name', 'symbol')

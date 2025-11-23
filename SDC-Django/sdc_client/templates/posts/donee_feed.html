@@ -41,9 +41,9 @@
           <div class="post-meta">
             <span class="meta-tag status">{{ post.get_status_display }}</span>
             <span class="meta-tag">
-              Total: {{ post.quantity|floatformat:0 }} | Aprobado: {{
-              post.quantity_approved|floatformat:0 }} | Pendiente: {{
-              post.quantity_pending|floatformat:0 }}
+              Total: {{ post.quantity|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
+              Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
+              Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
             </span>
           </div>
           <h3>{{ post.title }}</h3>
@@ -77,14 +77,14 @@
             <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
             <span class="meta-tag">Categoría: {{ post.category.name }}</span>
             <span class="meta-tag"
-              >Total Ofrecido: {{ post.quantity|floatformat:0 }}</span
-            >
+              >Total Ofrecido: {{ post.quantity|floatformat:0 }} {% if post.unit%}{{ post.unit.symbol }}{% endif %}
+            </span>
             <span class="meta-tag type-offer"
-              >Aprobado: {{ post.quantity_approved|floatformat:0 }}</span
-            >
+              >Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
+            </span>
             <span class="meta-tag type-request"
-              >Pendiente: {{ post.quantity_pending|floatformat:0 }}</span
-            >
+              >Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
+            </span>
           </div>
 
           <div class="post-interaction">
@@ -94,10 +94,10 @@
               <input
                 type="number"
                 name="quantity_committed"
-                placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }}"
+                placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
                 min="0.01"
                 step="0.01"
-                max="{{ post.quantity_remaining|floatformat:2 }}"
+                max="{{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
                 required
               />
               <button type="submit">¡Estoy interesado!</button>
