@@ -100,6 +100,23 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class MeasurementUnit(models.Model):
+    """
+    Unidades de medida (Ej. Kilo, Litro, Pieza, Caja).
+    Define el límite máximo permitido para publicaciones 'normales'.
+    """
+    name = models.CharField(max_length=50, unique=True, verbose_name="Nombre (ej. Kilogramo)")
+    symbol = models.CharField(max_length=10, verbose_name="Símbolo (ej. kg)")
+    max_limit_normal = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=10.0,
+        verbose_name="Límite para usuario normal"
+    )
+
+    def __str__(self):
+        return f"{self.name} ({self.symbol})"
+
 class Post(models.Model):
     class PostType(models.TextChoices):
         REQUEST = 'REQUEST', 'Solicitud'
@@ -120,6 +137,13 @@ class Post(models.Model):
     is_campaign = models.BooleanField(default=False, help_text="Marcar si es una campaña masiva (solo Instituciones)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    unit = models.ForeignKey(
+        MeasurementUnit, 
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True,
+        verbose_name="Unidad"
+    )
 
     # --- Propiedades de Cantidad ---
     @property

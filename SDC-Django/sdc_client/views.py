@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction, IntegrityError
-from django.contrib.auth import authenticate, login # Para Login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required # Decorador para proteger vistas
 from django.http import JsonResponse
 import json
@@ -72,6 +72,10 @@ def create_post(request):
 
 @login_required
 def donee_feed(request):
+    if not hasattr(request.user, 'donee'):
+        messages.error(request, "No tienes permisos para ver el panel de Donatarios.")
+        return redirect('home')
+
     my_requests = Post.objects.filter(author=request.user, post_type=Post.PostType.REQUEST).order_by('-created_at')
     available_offers = Post.objects.filter(post_type=Post.PostType.OFFER, status=Post.PostStatus.ACTIVE).exclude(author=request.user).order_by('-created_at')
     context = {
@@ -84,6 +88,10 @@ def donee_feed(request):
 
 @login_required
 def donor_feed(request):
+    if not hasattr(request.user, 'donor'):
+        messages.error(request, "No tienes permisos para ver el panel de Donadores.")
+        return redirect('home')
+
     my_offers = Post.objects.filter(author=request.user, post_type=Post.PostType.OFFER).order_by('-created_at')
     available_requests = Post.objects.filter(post_type=Post.PostType.REQUEST, status=Post.PostStatus.ACTIVE).exclude(author=request.user).order_by('-created_at')
     context = {
@@ -96,6 +104,10 @@ def donor_feed(request):
 
 @login_required
 def institution_feed(request):
+    if not hasattr(request.user, 'institution'):
+        messages.error(request, "No tienes permisos para ver el panel de Instituciones.")
+        return redirect('home')
+
     my_posts = Post.objects.filter(author=request.user).order_by('-created_at')
     all_other_posts = Post.objects.filter(status=Post.PostStatus.ACTIVE).exclude(author=request.user).order_by('-created_at')
     context = {
@@ -267,3 +279,11 @@ def api_login_view(request):
         }, status=200)
     else:
         return JsonResponse({'error': 'Credenciales inválidas'}, status=401)
+
+def sign_out(request):
+    """
+    Cierra la sesión del usuario en el servidor y redirige.
+    """
+    logout(request)
+    messages.success(request, "Has cerrado sesión correctamente.")
+    return redirect('login')

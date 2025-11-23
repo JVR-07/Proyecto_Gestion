@@ -1,93 +1,119 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'posts/styles/posts.css' %}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'posts/styles/posts.css' %}" />
     <title>Inicio | Donatario</title>
-</head>
-<body class="post-feed-body">
-
+  </head>
+  <body class="post-feed-body">
     <div class="feed-container">
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li class="message {{ message.tags }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        
-        <div class="feed-header">
-            <h1>Bienvenido, Donatario</h1>
-            <a href="{% url 'create_post' %}" class="btn-create">Crear Solicitud</a>
+      {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <div class="feed-header">
+        <h1>Bienvenido, Donatario</h1>
+        <div style="display: flex; gap: 10px">
+          <a href="{% url 'create_post' %}" class="btn-create"
+            >Crear Solicitud</a
+          >
+
+          <button
+            onclick="handleLogout('{% url 'logout' %}')"
+            class="btn-create"
+            style="background-color: #e63946"
+          >
+            Salir
+          </button>
         </div>
+      </div>
 
-        <section class="post-section">
-            <h2>Mis Solicitudes Activas</h2>
-            {% for post in my_posts %}
-                <div class="post-card">
-                    <div class="post-meta">
-                        <span class="meta-tag status">{{ post.get_status_display }}</span>
-                        <span class="meta-tag">
-                            Total: {{ post.quantity|floatformat:0 }} | 
-                            Aprobado: {{ post.quantity_approved|floatformat:0 }} | 
-                            Pendiente: {{ post.quantity_pending|floatformat:0 }}
-                        </span>
-                    </div>
-                    <h3>{{ post.title }}</h3>
-                    <p>{{ post.description }}</p>
-                    <div class="post-meta">
-                        <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-                    </div>
-                </div>
-            {% empty %}
-                <p>No tienes solicitudes activas.</p>
-            {% endfor %}
-        </section>
+      <section class="post-section">
+        <h2>Mis Solicitudes Activas</h2>
+        {% for post in my_posts %}
+        <div class="post-card">
+          <div class="post-meta">
+            <span class="meta-tag status">{{ post.get_status_display }}</span>
+            <span class="meta-tag">
+              Total: {{ post.quantity|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
+              Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
+              Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
+            </span>
+          </div>
+          <h3>{{ post.title }}</h3>
+          <p>{{ post.description }}</p>
+          <div class="post-meta">
+            <span class="meta-tag">Categoría: {{ post.category.name }}</span>
+          </div>
+        </div>
+        {% empty %}
+        <p>No tienes solicitudes activas.</p>
+        {% endfor %}
+      </section>
 
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+      <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 30px 0" />
 
-        <section class="post-section">
-            <h2>{{ feed_title }}</h2>
-            {% for post in feed_posts %}
-                <div class="post-card">
-                    <div class="post-meta">
-                        <span class="meta-tag type-offer">{{ post.get_post_type_display }}</span>
-                        {% if post.is_campaign %}
-                            <span class="meta-tag status">CAMPAÑA</span>
-                        {% endif %}
-                    </div>
-                    <h3>{{ post.title }}</h3>
-                    <p>{{ post.description }}</p>
-                    <div class="post-meta">
-                        <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
-                        <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-                        <span class="meta-tag">Total Ofrecido: {{ post.quantity|floatformat:0 }}</span>
-                        <span class="meta-tag type-offer">Aprobado: {{ post.quantity_approved|floatformat:0 }}</span>
-                        <span class="meta-tag type-request">Pendiente: {{ post.quantity_pending|floatformat:0 }}</span>
-                    </div>
-                    
-                    <div class="post-interaction">
-                        {% if post.quantity_remaining > 0 %}
-                            <form method="POST" action="{% url 'create_transaction' post.id %}">
-                                {% csrf_token %}
-                                <input type="number" name="quantity_committed" 
-                                       placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }}" 
-                                       min="0.01" step="0.01" 
-                                       max="{{ post.quantity_remaining|floatformat:2 }}" required>
-                                <button type="submit">¡Estoy interesado!</button>
-                            </form>
-                        {% else %}
-                            <p style="color: #90be6d; font-weight: 500;">¡Esta oferta ya no tiene stock disponible!</p>
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>No hay ofertas de donación disponibles en este momento.</p>
-            {% endfor %}
-        </section>
+      <section class="post-section">
+        <h2>{{ feed_title }}</h2>
+        {% for post in feed_posts %}
+        <div class="post-card">
+          <div class="post-meta">
+            <span class="meta-tag type-offer"
+              >{{ post.get_post_type_display }}</span
+            >
+            {% if post.is_campaign %}
+            <span class="meta-tag status">CAMPAÑA</span>
+            {% endif %}
+          </div>
+          <h3>{{ post.title }}</h3>
+          <p>{{ post.description }}</p>
+          <div class="post-meta">
+            <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
+            <span class="meta-tag">Categoría: {{ post.category.name }}</span>
+            <span class="meta-tag"
+              >Total Ofrecido: {{ post.quantity|floatformat:0 }} {% if post.unit%}{{ post.unit.symbol }}{% endif %}
+            </span>
+            <span class="meta-tag type-offer"
+              >Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
+            </span>
+            <span class="meta-tag type-request"
+              >Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
+            </span>
+          </div>
+
+          <div class="post-interaction">
+            {% if post.quantity_remaining > 0 %}
+            <form method="POST" action="{% url 'create_transaction' post.id %}">
+              {% csrf_token %}
+              <input
+                type="number"
+                name="quantity_committed"
+                placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
+                min="0.01"
+                step="0.01"
+                max="{{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
+                required
+              />
+              <button type="submit">¡Estoy interesado!</button>
+            </form>
+            {% else %}
+            <p style="color: #90be6d; font-weight: 500">
+              ¡Esta oferta ya no tiene stock disponible!
+            </p>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <p>No hay ofertas de donación disponibles en este momento.</p>
+        {% endfor %}
+      </section>
     </div>
-
-</body>
+    <script src="{% static 'login/scripts/logout-logic.js' %}"></script>
+  </body>
 </html>

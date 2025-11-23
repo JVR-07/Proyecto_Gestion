@@ -153,3 +153,14 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+
+
+# --- Configuración de Login/Logout ---
+# Si @login_required bloquea a alguien, lo manda aquí:
+LOGIN_URL = 'login' 
+
+# A dónde ir después de iniciar sesión (si no se especifica otra):
+LOGIN_REDIRECT_URL = 'home'
+
+# A dónde ir después de cerrar sesión:
+LOGOUT_REDIRECT_URL = 'login'

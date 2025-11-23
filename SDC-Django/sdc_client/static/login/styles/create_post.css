@@ -1,0 +1,23 @@
+/* Estilos rápidos para los radio buttons */
+      .form-field ul {
+        list-style: none;
+        padding-left: 0;
+      }
+      .form-field ul li {
+        display: inline-block;
+        margin-right: 15px;
+      }
+      .form-field ul li label {
+        margin-left: 5px;
+        font-weight: 400;
+      }
+
+      .form-field input[type="checkbox"] {
+        width: auto;
+        margin-right: 10px;
+      }
+      .form-field .help-text {
+        font-size: 0.8em;
+        color: #ccc;
+        margin-left: 5px;
+      }

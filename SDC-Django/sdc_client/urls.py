@@ -28,4 +28,6 @@ urlpatterns = [
     
     # Endpoints de Simple JWT (para refrescar tokens)
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path('logout/', views.sign_out, name='logout'),
 ]
