@@ -164,8 +164,8 @@ class PostForm(forms.ModelForm):
         ]
         labels = {
             'title': 'Título de la publicación',
-            'description': 'Descripción (¿Qué necesitas o qué ofreces?)',
-            'quantity': 'Cantidad (aprox. en unidades, kg, piezas, etc.)',
+            'description': 'Descripción ',
+            'quantity': 'Cantidad',
         }
         widgets = {
             'title': forms.TextInput(attrs={'placeholder': 'Ej. Ropa de invierno para niños'}),

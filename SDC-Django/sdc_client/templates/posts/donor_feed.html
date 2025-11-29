@@ -1,131 +1,127 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{% static 'posts/styles/posts.css' %}" />
-    <title>Inicio | Donador</title>
-  </head>
-  <body class="post-feed-body">
-    <div class="feed-container">
-      {% if messages %}
-      <ul class="messages">
-        {% for message in messages %}
-        <li class="message {{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
 
-      <div class="feed-header">
-        <h1>Bienvenido, Donador</h1>
-        <div style="display: flex; gap: 10px">
-          <a href="{% url 'create_post' %}" class="btn-create">Crear Oferta</a>
+{% block title %}Inicio | Donador{% endblock %}
 
-          <button
-            onclick="handleLogout('{% url 'logout' %}')"
-            class="btn-create"
-            style="background-color: #e63946"
-          >
-            Salir
-          </button>
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <div class="hidden lg:block lg:col-span-1">
+        <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24 border border-gray-100">
+            <h2 class="text-xl font-heading font-semibold text-gray-800 mb-4">Mi Actividad</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500">Ofertas Activas</span>
+                    <span class="font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded">{{ my_posts.count }}</span>
+                </div>
+                </div>
+            <hr class="my-6 border-gray-100">
+            <h3 class="font-medium text-gray-700 mb-2">Tus ofertas recientes</h3>
+            {% for post in my_posts|slice:":3" %}
+                <div class="mb-3 last:mb-0">
+                    <a href="{% url 'edit_post' post.id %}" class="text-sm font-medium text-gray-900 hover:text-brand-600 block truncate">
+                        {{ post.title }}
+                    </a>
+                    <span class="text-xs text-gray-400">{{ post.created_at|date:"d M, Y" }}</span>
+                </div>
+            {% empty %}
+                <p class="text-sm text-gray-400">No tienes ofertas activas.</p>
+            {% endfor %}
         </div>
-      </div>
-
-      <section class="post-section">
-        <h2>Mis Ofertas Activas</h2>
-        {% for post in my_posts %}
-        <div class="post-card">
-          <div class="post-meta">
-            <span class="meta-tag status">{{ post.get_status_display }}</span>
-            <span class="meta-tag">
-              Total: {{ post.quantity|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
-              Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
-              Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-          </div>
-          <h3>{{ post.title }}</h3>
-          <p>{{ post.description }}</p>
-          <div class="post-meta">
-            <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-          </div>
-          <div class="post-interaction" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px; display: flex; gap: 10px;">
-                        
-            <button onclick="window.location.href='{% url 'edit_post' post.id %}'" 
-            style="background-color: #f9c74f; color: #1B1B1B; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: 600;">
-              Editar
-            </button>
-
-            {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
-            <button onclick="if(confirm('¿Estás seguro de cerrar esta publicación? Ya no será visible.')) window.location.href='{% url 'close_post' post.id %}'" 
-            style="background-color: #ff8a80; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: 600;">
-              Cerrar
-            </button>
-            {% endif %}
-          </div>
-        </div>
-        {% empty %}
-        <p>No tienes ofertas activas.</p>
-        {% endfor %}
-      </section>
-
-      <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 30px 0" />
-
-      <section class="post-section">
-        <h2>{{ feed_title }}</h2>
-        {% for post in feed_posts %}
-        <div class="post-card">
-          <div class="post-meta">
-            <span class="meta-tag type-request"
-              >{{ post.get_post_type_display }}</span
-            >
-            {% if post.is_campaign %}
-            <span class="meta-tag status">CAMPAÑA</span>
-            {% endif %}
-          </div>
-          <h3>{{ post.title }}</h3>
-          <p>{{ post.description }}</p>
-          <div class="post-meta">
-            <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
-            <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-            <span class="meta-tag"
-              >Total Solicitado: {{ post.quantity|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-            <span class="meta-tag type-offer"
-              >Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-            <span class="meta-tag type-request"
-              >Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-          </div>
-
-          <div class="post-interaction">
-            {% if post.quantity_remaining > 0 %}
-            <form method="POST" action="{% url 'create_transaction' post.id %}">
-              {% csrf_token %}
-              <input
-                type="number"
-                name="quantity_committed"
-                placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
-                min="0.01"
-                step="0.01"
-                max="{{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
-                required
-              />
-              <button type="submit">¡Quiero Donar!</button>
-            </form>
-            {% else %}
-            <p style="color: #f9c74f; font-weight: 500">
-              ¡Esta solicitud ya está cubierta!
-            </p>
-            {% endif %}
-          </div>
-        </div>
-        {% empty %}
-        <p>No hay solicitudes de ayuda activas en este momento.</p>
-        {% endfor %}
-      </section>
     </div>
-    <script src="{% static 'login/scripts/logout-logic.js' %}"></script>
-  </body>
-</html>
+
+    <div class="lg:col-span-2 space-y-6">
+        
+        <div class="flex items-center justify-between mb-2">
+            <h1 class="text-2xl font-bold text-gray-800">{{ feed_title }}</h1>
+            <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2">
+                <option>Más recientes</option>
+                <option>Por vencer</option>
+            </select>
+        </div>
+
+        {% for post in feed_posts %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center text-brand-600 font-bold">
+                            {{ post.author.email|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 leading-tight">{{ post.title }}</h3>
+                            <p class="text-xs text-gray-500">
+                                {{ post.author.email }} • <span class="text-gray-400">{{ post.created_at|timesince }} atrás</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                            {% if post.post_type == 'OFFER' %}bg-green-100 text-green-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ post.get_post_type_display }}
+                        </span>
+                        {% if post.is_campaign %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Campaña
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <p class="text-gray-600 mb-4 leading-relaxed">
+                    {{ post.description }}
+                </p>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-4 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <span class="block text-xs text-gray-500 uppercase tracking-wider">Total</span>
+                        <span class="block text-lg font-bold text-gray-900">{{ post.quantity|floatformat:0 }} <small class="text-xs font-normal">{{ post.unit.symbol|default:"" }}</small></span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-gray-500 uppercase tracking-wider">Restante</span>
+                        <span class="block text-lg font-bold text-brand-600">{{ post.quantity_remaining|floatformat:2 }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-gray-500 uppercase tracking-wider">Categoría</span>
+                        <span class="block text-sm font-medium text-gray-700 mt-1">{{ post.category.name }}</span>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                    {% if post.quantity_remaining > 0 %}
+                    <form method="POST" action="{% url 'create_transaction' post.id %}" class="flex-1 flex gap-2">
+                        {% csrf_token %}
+                        <input 
+                            type="number" 
+                            name="quantity_committed" 
+                            placeholder="Cantidad a donar..." 
+                            step="0.01"
+                            max="{{ post.quantity_remaining }}"
+                            class="flex-1 min-w-0 rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-brand-500 focus:border-brand-500"
+                            required
+                        >
+                        <button type="submit" class="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition">
+                            Comprometer Ayuda
+                        </button>
+                    </form>
+                    {% else %}
+                        <div class="w-full text-center py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+                            ✅ Meta Completada
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay solicitudes pendientes</h3>
+            <p class="mt-1 text-sm text-gray-500">Todo está cubierto por ahora. ¡Vuelve más tarde!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
