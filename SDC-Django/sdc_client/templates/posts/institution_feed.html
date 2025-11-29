@@ -63,6 +63,20 @@
           <div class="post-meta">
             <span class="meta-tag">Categoría: {{ post.category.name }}</span>
           </div>
+          <div class="post-interaction" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px; display: flex; gap: 10px;">
+                        
+            <button onclick="window.location.href='{% url 'edit_post' post.id %}'" 
+            style="background-color: #f9c74f; color: #1B1B1B; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: 600;">
+              Editar
+            </button>
+
+            {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
+            <button onclick="if(confirm('¿Estás seguro de cerrar esta publicación? Ya no será visible.')) window.location.href='{% url 'close_post' post.id %}'" 
+            style="background-color: #ff8a80; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: 600;">
+              Cerrar
+            </button>
+            {% endif %}
+          </div>
         </div>
         {% empty %}
         <p>No tienes publicaciones activas.</p>

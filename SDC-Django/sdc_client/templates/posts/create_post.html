@@ -12,7 +12,13 @@
   <body>
     <div class="main-container">
       <div class="register-card" style="max-width: 600px">
-        <h2>Crear Nueva Publicación</h2>
+        <h2>
+            {% if is_edit %}
+                Editar Publicación
+            {% else %}
+                Crear Nueva Publicación
+            {% endif %}
+        </h2>
 
         {% if messages %}
         <div class="messages">
@@ -87,7 +93,9 @@
             <small class="form-error">{{ form.description.errors }}</small>
           </div>
 
-          <button type="submit" class="btn primary">Publicar</button>
+          <button type="submit" class="btn primary">
+            {% if is_edit %}Guardar Cambios{% else %}Publicar{% endif %}
+        </button>
         </form>
       </div>
     </div>
