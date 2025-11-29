@@ -1,7 +1,7 @@
 import re
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Post, Category, MeasurementUnit
+from .models import Post, Category, MeasurementUnit, Warehouse
 
 # --- Funciones de Validación Reutilizables ---
 
@@ -141,9 +141,17 @@ class PostForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    # Campo para almacén (solo para Instituciones)
+    warehouse = forms.ModelChoiceField(
+        queryset=Warehouse.objects.none(),
+        label="Almacén",
+        required=False,
+        empty_label="Selecciona un almacén",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     class Meta:
         model = Post
-        # --- Añadir los nuevos campos al 'fields' ---
         fields = [
             'post_type',
             'is_campaign',
@@ -152,6 +160,7 @@ class PostForm(forms.ModelForm):
             'category', 
             'quantity',
             'unit',
+            'warehouse',
         ]
         labels = {
             'title': 'Título de la publicación',
@@ -181,11 +190,14 @@ class PostForm(forms.ModelForm):
         is_institution = False
         if user is not None and hasattr(user, 'institution'):
             is_institution = True
+
+            self.fields['warehouse'].queryset = user.institution.warehouses.all()
         
         # Si el usuario NO es una institución, eliminamos los campos
         if not is_institution:
             del self.fields['post_type']
             del self.fields['is_campaign']
+            del self.fields['warehouse']
     
     def clean(self):
         cleaned_data = super().clean()
@@ -201,5 +213,11 @@ class PostForm(forms.ModelForm):
             if not is_campaign and quantity > limit:
                 self.add_error('quantity', f"El límite para {unit.name} en publicaciones normales es de {limit} {unit.symbol}. (Tu intentaste: {quantity})")
                 self.add_error('is_campaign', "Considera crear una campaña masiva si eres una Institución.")
+        
+        # Validación del campo almacén para instituciones
+        if 'warehouse' in self.fields:
+            warehouse = cleaned_data.get('warehouse')
+            if not warehouse:
+                self.add_error('warehouse', "Las instituciones deben seleccionar un almacén para gestionar el inventario.")
         
         return cleaned_data

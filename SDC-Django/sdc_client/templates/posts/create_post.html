@@ -29,14 +29,23 @@
             <p>{{ error }}</p>
             {% endfor %}
           </div>
-          {% endif %} {% comment %} Campos dinámicos para Instituciones. Django
-          no los renderizará si los eliminamos en el forms.py {% endcomment %}
+          {% endif %}
           {% if form.post_type %}
           <div class="form-field">
             {{ form.post_type.label_tag }} {{ form.post_type }}
             <small class="form-error">{{ form.post_type.errors }}</small>
           </div>
-          {% endif %} {% if form.is_campaign %}
+          {% endif %} 
+
+          {% if form.warehouse %}
+          <div class="form-field">
+            {{ form.warehouse.label_tag }} 
+            {{ form.warehouse }}
+            <small class="form-error">{{ form.warehouse.errors }}</small>
+          </div>
+          {% endif %}
+
+          {% if form.is_campaign %}
           <div class="form-field">
             <label>{{ form.is_campaign.label_tag }}</label>
             <div>
@@ -45,7 +54,9 @@
             </div>
             <small class="form-error">{{ form.is_campaign.errors }}</small>
           </div>
-          {% endif %} {% if form.post_type or form.is_campaign %}
+          {% endif %} 
+          
+          {% if form.post_type or form.is_campaign %}
           <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 10px 0" />
           {% endif %}
 

@@ -88,6 +88,12 @@ class Institution(models.Model):
     state = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    warehouses = models.ManyToManyField(
+        'Warehouse', 
+        related_name='institutions',
+        blank=True,
+        verbose_name="Almacenes Asignados"
+    )
     def __str__(self):
         return self.name
     
@@ -143,6 +149,14 @@ class Post(models.Model):
         null=True, 
         blank=True,
         verbose_name="Unidad"
+    )
+    warehouse = models.ForeignKey(
+        'Warehouse',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Almacén (Origen/Destino)",
+        help_text="Almacén relacionado a esta operación (Solo Instituciones)"
     )
 
     # --- Propiedades de Cantidad ---

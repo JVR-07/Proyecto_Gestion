@@ -15,6 +15,12 @@ class WarehouseAdmin(admin.ModelAdmin):
     list_display = ('name', 'city', 'state', 'manager')
     search_fields = ('name', 'city')
 
+@admin.register(Institution)
+class InstitutionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'rfc', 'city')
+    search_fields = ('name', 'rfc')
+    filter_horizontal = ('warehouses',)
+
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
     list_display = ('warehouse', 'category', 'quantity', 'last_updated')
@@ -37,30 +43,28 @@ def approve_personal_transaction(modeladmin, request, queryset):
         except Exception as e:
             messages.error(request, f'Error al aprobar "{transaction}": {e}')
 
-@admin.action(description='Aprobar y Mover a/de (Almacén Principal)')
+@admin.action(description='Aprobar y Mover a/de Almacén (Automático)')
 def approve_warehouse_transaction(modeladmin, request, queryset):
     """
     Acción: Aprueba transacciones afectando el inventario.
-    Se usa el primer almacén disponible.
-    (TODO): Permitir seleccionar almacén en el futuro.
+    Usa el almacén definido en el Post de la Institución.
     """
-    try:
-        warehouse = Warehouse.objects.first()
-        if not warehouse:
-            raise Exception("No hay almacenes registrados. Cree uno primero.")
+    pending = queryset.filter(status=Transaction.TransactionStatus.PENDING)
+    
+    success_count = 0
+    for transaction in pending:
+        try:
+            target_warehouse = transaction.post.warehouse
+            
+            if not target_warehouse:
+                raise Exception("El post de esta transacción no tiene un almacén asignado.")
 
-        pending = queryset.filter(status=Transaction.TransactionStatus.PENDING)
-
-        for transaction in pending:
-            try:
-                # Llama al nuevo método CON el almacén
-                msg = transaction.approve_transaction(warehouse=warehouse)
-                messages.success(request, f'"{transaction}": {msg}')
-            except Exception as e:
-                messages.error(request, f'Error al aprobar "{transaction}": {e}')
-
-    except Exception as e:
-        messages.error(request, f'Error general: {e}')
+            msg = transaction.approve_transaction(warehouse=target_warehouse)
+            messages.success(request, f'"{transaction}": {msg}')
+            success_count += 1
+            
+        except Exception as e:
+            messages.error(request, f'Error al aprobar "{transaction}": {e}')
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
@@ -76,7 +80,7 @@ admin.site.register(CustomUser)
 admin.site.register(Status)
 admin.site.register(Donee)
 admin.site.register(Donor)
-admin.site.register(Institution)
+# admin.site.register(Institution)
 admin.site.register(Category)
 admin.site.register(Post)
 # admin.site.register(Transaction)
