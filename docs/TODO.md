@@ -17,3 +17,9 @@ Cuando haya una transaccion pendiente, si se borra la publi se cancela la transa
 Mostrar en la publicacion la cantidad que esta pendiente por aprobar.
 
 - Seccion Mis publicaciones asegurar que todos tengan la misma y borrar boton borrar publi de crear_publicacion
+
+- Mostrar etiqueta de color para el estado de una publi.
+
+- Al eliminar una publi, que no deje editarla desde el panel del feed, y al darle click a la publi que te deje ver toda la info pero que no deje editarla.
+
+- Quitar alert al darle click en cancelar publi y poner una modal

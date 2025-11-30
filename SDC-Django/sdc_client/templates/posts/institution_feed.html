@@ -16,7 +16,7 @@
               </div>
               <div class="text-left">
                 <h2 class="font-bold text-gray-900 text-lg">Mis Publicaciones</h2>
-                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Publicaciones</p>
               </div>
             </div>
 
@@ -25,7 +25,11 @@
             <div class="space-y-2">
                 {% for post in my_posts|slice:":4" %}
                 <div class="group flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 mb-2 shadow-sm hover:shadow">
-                    
+                    {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                        <span class="h-3 w-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0 mr-2"></span>
+                    {% else %}
+                        <span class="h-3 w-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0 mr-2"></span>
+                    {% endif %}
                     <div class="flex-grow min-w-0 cursor-pointer mr-3" onclick="window.location.href='{% url 'edit_post' post.id %}'">
                         <div class="flex justify-between items-start">
                             <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
@@ -36,15 +40,10 @@
                     </div>
 
                     <div class="flex items-center gap-1 opacity-0 lg:opacity-100 group-hover:opacity-100 transition-opacity">
-                        {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
-                                <span class="h-2 w-2 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></span>
-                            {% else %}
-                                <span class="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></span>
-                            {% endif %}
+                        {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
                         <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         </a>
-                        {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
                         <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
                                 class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -79,7 +78,7 @@
                       </div>
                       <div class="text-left">
                         <h2 class="font-bold text-gray-900 text-lg">Mis Publicaciones</h2>
-                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Publicaciones</p>
                       </div>
                     </div>
                     <svg id="chevron-icon" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +90,11 @@
                      <div class="p-3 space-y-2 max-h-60 overflow-y-auto">
                         {% for post in my_posts %}
                             <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-transparent shadow-sm">
+                                {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                                    <span class="h-3 w-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0 mr-2"></span>
+                                {% else %}
+                                    <span class="h-3 w-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0 mr-2"></span>
+                                {% endif %}
                                 <div class="overflow-hidden flex-grow cursor-pointer" onclick="window.location.href='{% url 'edit_post' post.id %}'">
                                     <div class="flex justify-between items-start">
                                         <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
@@ -100,15 +104,10 @@
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-1 opacity-100 lg:opacity-100 group-hover:opacity-100 transition-opacity">
-                                    {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
-                                            <span class="h-2 w-2 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></span>
-                                        {% else %}
-                                            <span class="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></span>
-                                        {% endif %}
+                                    {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
                                     <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                     </a>
-                                    {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
                                     <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
                                             class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -155,14 +154,27 @@
                     {{ post.description }}
                 </p>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                    <div class="bg-slate-50 p-2 rounded-lg text-center border border-slate-100">
-                        <span class="block text-[10px] text-gray-400 uppercase font-bold">Categoría</span>
-                        <span class="text-sm font-semibold text-gray-700 truncate">{{ post.category.name }}</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
+                    <div class="bg-white p-2 rounded-lg text-center border border-gray-200 shadow-sm">
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Categoría</span>
+                        <span class="text-sm font-semibold text-gray-800 truncate">{{ post.category.name }}</span>
                     </div>
-                    <div class="bg-brand-50 p-2 rounded-lg text-center border border-brand-100 col-span-2">
-                        <span class="block text-[10px] text-brand-400 uppercase font-bold">Disponible / Pendiente</span>
-                        <span class="text-sm font-bold text-brand-700">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
+                    <div class="bg-white p-2 rounded-lg text-center border border-gray-200 shadow-sm">
+                        {% if post.get_post_type_display == "Solicitud" %}
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Solicitado</span>
+                        {% else %}
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Ofertado</span>
+                        {% endif %}
+                        <span class="text-sm font-semibold text-gray-800">{{ post.quantity|floatformat:0 }}</span>
+                    </div>
+                    <div class="bg-amber-50 p-2 rounded-lg text-center border border-amber-200 col-span-2 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+                        {% if post.get_post_type_display == "Solicitud" %}
+                        <span class="block text-[10px] text-amber-600 uppercase font-bold tracking-wider">Falta por cubrir</span>
+                        {% else %}
+                        <span class="block text-[10px] text-amber-600 uppercase font-bold tracking-wider">Disponible</span>
+                        {% endif %}
+                        <span class="text-sm font-bold text-amber-800">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
                     </div>
                 </div>
             </div>

@@ -110,15 +110,14 @@
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/30 transition transform active:scale-[0.98] text-base flex justify-center items-center gap-2">
                     {% if is_edit %} Guardar Cambios{% else %} Publicar Ahora{% endif %}
                 </button>
-
-                {% if is_edit %}
+                {% if status == 'COMPLETED' or status == 'CANCELLED' %}
                 <button type="button" 
                     onclick="if(confirm('¿Estás seguro de cerrar esta publicación? \n\nEsta acción indica que ya se completó o canceló la operación.')) window.location.href='{% url 'close_post' form.instance.id %}'"
                     class="w-full bg-white text-red-500 hover:bg-red-50 hover:text-red-700 font-semibold py-3 rounded-xl border border-red-200 transition text-sm flex justify-center items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Cerrar / Cancelar Publicación
+                    Test status
                 </button>
                 {% endif %}
             </div>

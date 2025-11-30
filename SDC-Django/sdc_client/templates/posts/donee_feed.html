@@ -17,23 +17,43 @@
               </div>
               <div class="text-left">
                 <h2 class="font-bold text-gray-900 text-lg">Mis Solicitudes</h2>
-                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Solicitudes</p>
               </div>
             </div>
 
             <hr class="my-6 border-gray-100">
 
-            <div class="space-y-3">
-                {% for post in my_posts|slice:":3" %}
-                <div class="group flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition cursor-pointer" onclick="window.location.href='{% url 'edit_post' post.id %}'">
-                    <div class="truncate pr-2">
-                        <p class="text-sm font-medium text-gray-800 group-hover:text-brand-600 truncate">{{ post.title }}</p>
-                        <p class="text-xs text-gray-400">{{ post.created_at|date:"d M" }} • {{ post.get_status_display }}</p>
+            <div class="space-y-2">
+                {% for post in my_posts|slice:":4" %}
+                <div class="group flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 mb-2 shadow-sm hover:shadow">
+                    {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                        <span class="h-3 w-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0 mr-2"></span>
+                    {% else %}
+                        <span class="h-3 w-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0 mr-2"></span>
+                    {% endif %}
+                    <div class="flex-grow min-w-0 cursor-pointer mr-3" onclick="window.location.href='{% url 'edit_post' post.id %}'">
+                        <div class="flex justify-between items-start">
+                            <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-0.5 truncate">
+                            {{ post.created_at|date:"d M" }} • {{ post.get_post_type_display }}
+                        </p>
                     </div>
-                    <svg class="w-4 h-4 text-gray-300 group-hover:text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+
+                    <div class="flex items-center gap-1 opacity-0 lg:opacity-100 group-hover:opacity-100 transition-opacity">
+                        {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
+                        <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </a>
+                        <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
+                                class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
                 {% empty %}
-                <p class="text-sm text-gray-400 italic">Sin actividad reciente.</p>
+                <p class="text-sm text-gray-400 italic text-center py-4">No has publicado nada aún.</p>
                 {% endfor %}
             </div>
             
@@ -59,7 +79,7 @@
                     </div>
                     <div class="text-left">
                         <h2 class="font-bold text-gray-900 text-sm">Mis Solicitudes</h2>
-                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Solicitudes</p>
                     </div>
                 </div>
                 <svg id="chevron-icon" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,28 +90,35 @@
             <div id="mobile-my-activity" class="hidden bg-slate-50 border-t border-gray-100 transition-all">
                  <div class="p-3 space-y-2 max-h-60 overflow-y-auto">
                     {% for post in my_posts %}
-                        <div onclick="window.location.href='{% url 'edit_post' post.id %}'" class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm active:scale-[0.98] transition cursor-pointer">
-                            <div class="overflow-hidden">
-                                <p class="text-sm font-semibold text-gray-800 truncate">{{ post.title }}</p>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-200">
-                                        {{ post.get_status_display }}
-                                    </span>
-                                    <span class="text-xs text-gray-400">{{ post.created_at|date:"d/m" }}</span>
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-transparent shadow-sm">
+                                {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                                    <span class="h-3 w-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0 mr-2"></span>
+                                {% else %}
+                                    <span class="h-3 w-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0 mr-2"></span>
+                                {% endif %}
+                                <div class="overflow-hidden flex-grow cursor-pointer" onclick="window.location.href='{% url 'edit_post' post.id %}'">
+                                    <div class="flex justify-between items-start">
+                                        <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-0.5 truncate">
+                                        {{ post.created_at|date:"d M" }} • {{ post.get_post_type_display }}
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-1 opacity-100 lg:opacity-100 group-hover:opacity-100 transition-opacity">
+                                    {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
+                                    <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                    </a>
+                                    <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
+                                            class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </div>
-                    {% empty %}
-                        <div class="text-center py-4 text-gray-400 text-sm italic">
-                            No tienes solicitudes creadas.
-                        </div>
-                    {% endfor %}
-                    {% if my_posts.count > 0 %}
-                    <div class="text-center pt-2 pb-1">
-                         <span class="text-xs text-gray-400">Desliza para ver más</span>
-                    </div>
-                    {% endif %}
+                        {% empty %}
+                            <div class="text-center py-4 text-gray-400 text-sm">Sin actividad.</div>
+                        {% endfor %}
                  </div>
             </div>
         </div>
@@ -119,8 +146,8 @@
                         {{ post.author.email|slice:":1"|upper }}
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900 leading-tight pr-16">{{ post.title }}</h3>
-                        <p class="text-xs text-gray-500">Publicado por {{ post.author.email }}</p>
+                        <h3 class="text-lg font-bold text-gray-900 leading-tight pr-20">{{ post.title }}</h3>
+                        <p class="text-xs text-gray-500">{{ post.author.email }} • {{ post.created_at|timesince }}</p>
                     </div>
                 </div>
 
@@ -134,12 +161,13 @@
                         <span class="text-sm font-semibold text-gray-700 truncate">{{ post.category.name }}</span>
                     </div>
                     <div class="bg-slate-50 p-2 rounded-lg text-center border border-slate-100">
-                        <span class="block text-[10px] text-gray-400 uppercase font-bold">Total</span>
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold">Ofertado</span>
                         <span class="text-sm font-semibold text-gray-700">{{ post.quantity|floatformat:0 }}</span>
                     </div>
-                    <div class="bg-brand-50 p-2 rounded-lg text-center border border-brand-100 col-span-2">
-                        <span class="block text-[10px] text-brand-400 uppercase font-bold">Disponible</span>
-                        <span class="text-sm font-bold text-brand-700">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
+                    <div class="bg-amber-50 p-2 rounded-lg text-center border border-amber-200 col-span-2 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+                        <span class="block text-[10px] text-amber-600 uppercase font-bold tracking-wider">Disponible</span>
+                        <span class="text-sm font-bold text-amber-800">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
                     </div>
                 </div>
             </div>

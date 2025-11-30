@@ -28,11 +28,11 @@
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         {% if user.is_authenticated %}
            {% if user.donee %}
-             <a href="{% url 'donee_feed' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1">Ir a mi Panel</a>
+             <a href="{% url 'donee_feed' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1">Ingresar ahora</a>
            {% elif user.donor %}
-             <a href="{% url 'donor_feed' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1">Ir a mi Panel</a>
+             <a href="{% url 'donor_feed' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1">Ingresar ahora</a>
            {% else %}
-             <a href="{% url 'institution_feed' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1">Ir a mi Panel</a>
+             <a href="{% url 'institution_feed' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1">Ingresar ahora</a>
            {% endif %}
         {% else %}
           <a href="{% url 'login' %}" class="bg-white text-brand-900 font-bold py-4 px-8 rounded-xl shadow-xl hover:bg-blue-50 transition transform hover:-translate-y-1 hover:shadow-2xl">
