@@ -16,6 +16,8 @@ urlpatterns = [
     
     # Feeds
     path('create_post/', views.create_post, name='create_post'),
+    path('post/<int:post_id>/edit/', views.edit_post, name='edit_post'),
+    path('post/<int:post_id>/close/', views.close_post, name='close_post'),
     path('donee_feed', views.donee_feed, name='donee_feed'),
     path('donor_feed', views.donor_feed, name='donor_feed'),
     path('institution_feed', views.institution_feed, name='institution_feed'),

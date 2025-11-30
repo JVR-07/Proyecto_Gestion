@@ -1,32 +1,60 @@
+{% extends 'base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'login/styles/login.css' %}"/>
-    <title>Iniciar Sesión</title>
-</head>
-<body>
-    <div class="main-container">
-        <div class="content-container left">
-            <h1>¡Bienvenido a SDC!</h1>
-            <h2>Sistema de Distribución Comunitario</h2>
-            <p>Inicia sesión y comienza a navegar en nuestra plataforma.</p>
-        </div>
-        <div class="content-container right">
-            <h1>¡Únete a nuestra plataforma!</h1>
-            <div class="button-container">
-                <button class="btn primary" onclick="window.location.href='{% url 'auth' %}'">
+{% block title %}Bienvenido a SDC{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex flex-col justify-center">
+    
+    <div class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-heading font-bold text-gray-900 mb-4">
+            Bienvenido a <span class="text-brand-600">SDC</span>
+        </h1>
+        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
+            El sistema centralizado para gestionar donaciones, conectar instituciones y ayudar a la comunidad. Elige cómo quieres continuar.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full px-4">
+        
+        <div onclick="window.location.href='{% url 'auth' %}'" class="group relative bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-brand-100 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500 ease-out opacity-50"></div>
+            
+            <div class="relative z-10 flex flex-col items-center text-center h-full">
+                <div class="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center text-3xl mb-6 text-brand-600 shadow-inner group-hover:bg-brand-600 group-hover:text-white transition-colors duration-300">
+                    🔑
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Ya tengo cuenta</h2>
+                <p class="text-gray-500 mb-8 flex-grow">
+                    Accede a tu panel de donador, donatario o institución para gestionar tus actividades.
+                </p>
+                <button class="w-full bg-brand-600 text-white font-bold py-3 rounded-xl shadow-lg group-hover:shadow-brand-500/30 transition">
                     Iniciar Sesión
-                </button>
-                <button class="btn secondary" onclick="window.location.href='{% url 'register' %}'">
-                    Registrarse
                 </button>
             </div>
         </div>
+
+        <div onclick="window.location.href='{% url 'register' %}'" class="group relative bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-slate-800 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500 ease-out opacity-50"></div>
+            
+            <div class="relative z-10 flex flex-col items-center text-center h-full">
+                <div class="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl mb-6 text-white shadow-inner group-hover:bg-white group-hover:text-slate-900 transition-colors duration-300">
+                    🚀
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">Soy nuevo aquí</h2>
+                <p class="text-slate-400 mb-8 flex-grow">
+                    Crea una cuenta en segundos y comienza a participar en nuestra red de ayuda comunitaria.
+                </p>
+                <button class="w-full bg-white text-slate-900 font-bold py-3 rounded-xl shadow-lg hover:bg-gray-100 transition">
+                    Registrarse Gratis
+                </button>
+            </div>
+        </div>
+
     </div>
-    <p> Diseño preeliminar de la IA.</p>
-</body>
-</html>
+
+    <p class="text-center text-gray-400 text-sm mt-12">
+        Sistema de Distribución Comunitario &copy; 2025
+    </p>
+</div>
+{% endblock %}

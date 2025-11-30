@@ -71,6 +71,56 @@ def create_post(request):
     return render(request, 'posts/create_post.html', context)
 
 @login_required
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    
+    if post.author != request.user:
+        messages.error(request, "No tienes permiso para editar esta publicación.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post, user=request.user)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, '¡Publicación actualizada correctamente!')
+                
+                if hasattr(request.user, 'institution'):
+                    return redirect('institution_feed')
+                elif hasattr(request.user, 'donor'):
+                    return redirect('donor_feed')
+                elif hasattr(request.user, 'donee'):
+                    return redirect('donee_feed')
+                return redirect('home')
+                
+            except Exception as e:
+                messages.error(request, f"Error al actualizar: {e}")
+    else:
+        form = PostForm(instance=post, user=request.user)
+
+    context = {
+        'form': form,
+        'is_edit': True
+    }
+    return render(request, 'posts/create_post.html', context)
+
+@login_required
+def close_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    
+    if post.author != request.user:
+        messages.error(request, "No tienes permiso para cerrar esta publicación.")
+    else:
+        # Cambiamos el estado a CANCELLED o COMPLETED según prefieras.
+        # Usaremos CANCELLED para indicar que el usuario la cerró manualmente.
+        post.status = Post.PostStatus.CANCELLED
+        post.save()
+        messages.success(request, "Publicación cerrada/cancelada correctamente.")
+
+    # Redirigir a la página anterior
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+@login_required
 def donee_feed(request):
     if not hasattr(request.user, 'donee'):
         messages.error(request, "No tienes permisos para ver el panel de Donatarios.")

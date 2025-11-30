@@ -1,7 +1,7 @@
 import re
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Post, Category, MeasurementUnit
+from .models import Post, Category, MeasurementUnit, Warehouse, InventoryItem
 
 # --- Funciones de Validación Reutilizables ---
 
@@ -141,9 +141,17 @@ class PostForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    # Campo para almacén (solo para Instituciones)
+    warehouse = forms.ModelChoiceField(
+        queryset=Warehouse.objects.none(),
+        label="Almacén",
+        required=False,
+        empty_label="Selecciona un almacén",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     class Meta:
         model = Post
-        # --- Añadir los nuevos campos al 'fields' ---
         fields = [
             'post_type',
             'is_campaign',
@@ -152,11 +160,12 @@ class PostForm(forms.ModelForm):
             'category', 
             'quantity',
             'unit',
+            'warehouse',
         ]
         labels = {
             'title': 'Título de la publicación',
-            'description': 'Descripción (¿Qué necesitas o qué ofreces?)',
-            'quantity': 'Cantidad (aprox. en unidades, kg, piezas, etc.)',
+            'description': 'Descripción ',
+            'quantity': 'Cantidad',
         }
         widgets = {
             'title': forms.TextInput(attrs={'placeholder': 'Ej. Ropa de invierno para niños'}),
@@ -181,25 +190,47 @@ class PostForm(forms.ModelForm):
         is_institution = False
         if user is not None and hasattr(user, 'institution'):
             is_institution = True
+
+            self.fields['warehouse'].queryset = user.institution.warehouses.all()
         
         # Si el usuario NO es una institución, eliminamos los campos
         if not is_institution:
             del self.fields['post_type']
             del self.fields['is_campaign']
+            del self.fields['warehouse']
     
     def clean(self):
         cleaned_data = super().clean()
         quantity = cleaned_data.get('quantity')
         unit = cleaned_data.get('unit')
         is_campaign = cleaned_data.get('is_campaign')
+        post_type = cleaned_data.get('post_type')
+        warehouse = cleaned_data.get('warehouse')
+        category = cleaned_data.get('category')
         
-        # Si hay cantidad y unidad, validamos el límite
+        # Validación de Límite
         if quantity and unit:
             limit = unit.max_limit_normal
-            
-            # LÓGICA: Si NO es campaña y la cantidad supera el límite
             if not is_campaign and quantity > limit:
-                self.add_error('quantity', f"El límite para {unit.name} en publicaciones normales es de {limit} {unit.symbol}. (Tu intentaste: {quantity})")
-                self.add_error('is_campaign', "Considera crear una campaña masiva si eres una Institución.")
-        
+                msg = f"El límite para {unit.name} es de {limit} {unit.symbol}. (Intentaste publicar: {quantity})"
+                self.add_error('quantity', msg)
+                
+                if 'is_campaign' in self.fields:
+                     self.add_error('is_campaign', "Para cantidades mayores, una Institución debe marcar '¿Es una campaña masiva?'.")
+
+        # Validación de Stock en Almacén
+        if post_type == Post.PostType.OFFER and warehouse and category and quantity:
+            try:
+                inventory_item = InventoryItem.objects.get(warehouse=warehouse, category=category)
+                
+                if inventory_item.quantity < quantity:
+                    msg = f"Stock insuficiente en '{warehouse.name}'. Disponible: {inventory_item.quantity} {category.name}."
+                    self.add_error('quantity', msg)
+                    self.add_error('warehouse', "Selecciona otro almacén o ajusta la cantidad.")
+            
+            except InventoryItem.DoesNotExist:
+                msg = f"No hay stock de '{category.name}' en el almacén '{warehouse.name}'."
+                self.add_error('category', msg)
+                self.add_error('warehouse', "Este almacén no tiene este producto.")
+
         return cleaned_data

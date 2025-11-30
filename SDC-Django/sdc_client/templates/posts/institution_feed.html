@@ -1,136 +1,201 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{% static 'posts/styles/posts.css' %}" />
-    <title>Panel | Institución</title>
-  </head>
-  <body class="post-feed-body">
-    <div class="feed-container">
-      {% if messages %}
-      <ul class="messages">
-        {% for message in messages %}
-        <li class="message {{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
 
-      <div class="feed-header">
-        <h1>Bienvenido, Institución</h1>
-        <div style="display: flex; gap: 10px">
-          <a href="{% url 'create_post' %}" class="btn-create"
-            >Crear Publicación</a
-          >
+{% block title %}Panel | Institución{% endblock %}
 
-          <button
-            onclick="handleLogout('{% url 'logout' %}')"
-            class="btn-create"
-            style="background-color: #e63946"
-          >
-            Salir
-          </button>
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <div class="hidden lg:block lg:col-span-4 sticky top-24">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 border border-brand-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <div class="text-left">
+                <h2 class="font-bold text-gray-900 text-lg">Mis Publicaciones</h2>
+                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+              </div>
+            </div>
+
+            <hr class="my-6 border-gray-100">
+
+            <div class="space-y-2">
+                {% for post in my_posts|slice:":4" %}
+                <div class="group flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 mb-2 shadow-sm hover:shadow">
+                    
+                    <div class="flex-grow min-w-0 cursor-pointer mr-3" onclick="window.location.href='{% url 'edit_post' post.id %}'">
+                        <div class="flex justify-between items-start">
+                            <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-0.5 truncate">
+                            {{ post.created_at|date:"d M" }} • {{ post.get_post_type_display }}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-1 opacity-0 lg:opacity-100 group-hover:opacity-100 transition-opacity">
+                        {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                                <span class="h-2 w-2 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></span>
+                            {% else %}
+                                <span class="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></span>
+                            {% endif %}
+                        <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </a>
+                        {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
+                        <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
+                                class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-400 italic text-center py-4">No has publicado nada aún.</p>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-6">
+                 <a href="{% url 'create_post' %}" class="block w-full text-center py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-brand-500 hover:text-brand-600 font-medium transition bg-gray-50 hover:bg-white">
+                    + Crear Publicación
+                </a>
+            </div>
         </div>
-      </div>
-
-      <section class="post-section">
-        <h2>Mis Publicaciones Activas</h2>
-        {% for post in my_posts %}
-        <div class="post-card">
-          <div class="post-meta">
-            {% if post.post_type == 'OFFER' %}
-            <span class="meta-tag type-offer"
-              >{{ post.get_post_type_display }}</span
-            >
-            {% else %}
-            <span class="meta-tag type-request"
-              >{{ post.get_post_type_display }}</span
-            >
-            {% endif %}
-            <span class="meta-tag status">{{ post.get_status_display }}</span>
-            {% if post.is_campaign %}
-            <span class="meta-tag status">CAMPAÑA</span>
-            {% endif %}
-            <span class="meta-tag">
-              Total: {{ post.quantity|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
-              Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %} | 
-              Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-          </div>
-          <h3>{{ post.title }}</h3>
-          <p>{{ post.description }}</p>
-          <div class="post-meta">
-            <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-          </div>
-        </div>
-        {% empty %}
-        <p>No tienes publicaciones activas.</p>
-        {% endfor %}
-      </section>
-
-      <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 30px 0" />
-
-      <section class="post-section">
-        <h2>{{ feed_title }}</h2>
-        {% for post in feed_posts %}
-        <div class="post-card">
-          <div class="post-meta">
-            {% if post.post_type == 'OFFER' %}
-            <span class="meta-tag type-offer"
-              >{{ post.get_post_type_display }}</span
-            >
-            {% else %}
-            <span class="meta-tag type-request"
-              >{{ post.get_post_type_display }}</span
-            >
-            {% endif %} {% if post.is_campaign %}
-            <span class="meta-tag status">CAMPAÑA</span>
-            {% endif %}
-          </div>
-          <h3>{{ post.title }}</h3>
-          <p>{{ post.description }}</p>
-          <div class="post-meta">
-            <span class="meta-tag">Publicado por: {{ post.author.email }}</span>
-            <span class="meta-tag">Categoría: {{ post.category.name }}</span>
-            <span class="meta-tag">
-              Cantidad Total: {{ post.quantity|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-            <span class="meta-tag type-offer">
-              Aprobado: {{ post.quantity_approved|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-            <span class="meta-tag type-request">
-              Pendiente: {{ post.quantity_pending|floatformat:0 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}
-            </span>
-          </div>
-
-          <div class="post-interaction">
-            {% if post.quantity_remaining > 0 %}
-            <form method="POST" action="{% url 'create_transaction' post.id %}">
-              {% csrf_token %}
-              <input
-                type="number"
-                name="quantity_committed"
-                placeholder="Restante: {{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
-                min="0.01"
-                step="0.01"
-                max="{{ post.quantity_remaining|floatformat:2 }} {% if post.unit %}{{ post.unit.symbol }}{% endif %}"
-                required
-              />
-              <button type="submit">Interactuar</button>
-            </form>
-            {% else %}
-            <p style="color: #f9c74f; font-weight: 500">
-              ¡Esta publicación ya está cubierta!
-            </p>
-            {% endif %}
-          </div>
-        </div>
-        {% empty %}
-        <p>No hay actividad en la comunidad en este momento.</p>
-        {% endfor %}
-      </section>
     </div>
-    <script src="{% static 'login/scripts/logout-logic.js' %}"></script>
-  </body>
-</html>
+
+    <div class="col-span-1 lg:col-span-8 space-y-6">
+        
+        <div class="lg:hidden mb-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <button onclick="document.getElementById('mobile-my-activity').classList.toggle('hidden'); document.getElementById('chevron-icon').classList.toggle('rotate-180')" 
+                        class="w-full flex justify-between items-center p-4 bg-white hover:bg-gray-50 transition active:bg-gray-100">
+                    <div class="flex items-center gap-3">
+                      <div class="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 border border-brand-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                      <div class="text-left">
+                        <h2 class="font-bold text-gray-900 text-lg">Mis Publicaciones</h2>
+                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                      </div>
+                    </div>
+                    <svg id="chevron-icon" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                
+                <div id="mobile-my-activity" class="hidden bg-slate-50 border-t border-gray-100 transition-all">
+                     <div class="p-3 space-y-2 max-h-60 overflow-y-auto">
+                        {% for post in my_posts %}
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-transparent shadow-sm">
+                                <div class="overflow-hidden flex-grow cursor-pointer" onclick="window.location.href='{% url 'edit_post' post.id %}'">
+                                    <div class="flex justify-between items-start">
+                                        <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-0.5 truncate">
+                                        {{ post.created_at|date:"d M" }} • {{ post.get_post_type_display }}
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-1 opacity-100 lg:opacity-100 group-hover:opacity-100 transition-opacity">
+                                    {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                                            <span class="h-2 w-2 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></span>
+                                        {% else %}
+                                            <span class="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></span>
+                                        {% endif %}
+                                    <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                    </a>
+                                    {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
+                                    <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
+                                            class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-4 text-gray-400 text-sm">Sin actividad.</div>
+                        {% endfor %}
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-xl font-heading font-bold text-gray-800 flex items-center gap-2 px-1">
+            Actividad Comunitaria <span class="text-sm font-normal text-gray-500 ml-2">({{ feed_posts.count }})</span>
+        </h2>
+
+        {% for post in feed_posts %}
+        <article class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full relative group">
+            
+            <div class="absolute top-4 right-4 flex gap-2">
+                {% if post.is_campaign %}
+                <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">Campaña</span>
+                {% endif %}
+                <span class="{% if post.post_type == 'OFFER' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %} text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                    {{ post.get_post_type_display }}
+                </span>
+            </div>
+
+            <div class="p-6 pb-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200">
+                        {{ post.author.email|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 leading-tight pr-20">{{ post.title }}</h3>
+                        <p class="text-xs text-gray-500">{{ post.author.email }} • {{ post.created_at|timesince }}</p>
+                    </div>
+                </div>
+
+                <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {{ post.description }}
+                </p>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                    <div class="bg-slate-50 p-2 rounded-lg text-center border border-slate-100">
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold">Categoría</span>
+                        <span class="text-sm font-semibold text-gray-700 truncate">{{ post.category.name }}</span>
+                    </div>
+                    <div class="bg-brand-50 p-2 rounded-lg text-center border border-brand-100 col-span-2">
+                        <span class="block text-[10px] text-brand-400 uppercase font-bold">Disponible / Pendiente</span>
+                        <span class="text-sm font-bold text-brand-700">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-4 border-t border-gray-100 mt-auto">
+                {% if post.quantity_remaining > 0 %}
+                <form method="POST" action="{% url 'create_transaction' post.id %}" class="flex gap-3">
+                    {% csrf_token %}
+                    <div class="relative flex-grow">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">Cant:</span>
+                        <input type="number" name="quantity_committed" step="0.01" max="{{ post.quantity_remaining }}" placeholder="0.00" 
+                               class="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition" required>
+                    </div>
+                    <button type="submit" class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg text-sm font-bold transition shadow-md whitespace-nowrap">
+                        Interactuar
+                    </button>
+                </form>
+                {% else %}
+                <div class="text-center text-sm font-bold text-gray-500 py-2 bg-gray-100 rounded-lg">
+                    🔒 Completado
+                </div>
+                {% endif %}
+            </div>
+        </article>
+        {% empty %}
+        <div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 mb-4 text-gray-300">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">Sin Activdad Comunitaria</h3>
+            <p class="text-gray-500 mt-1">¡Gracias por tu disposición a ayudar!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

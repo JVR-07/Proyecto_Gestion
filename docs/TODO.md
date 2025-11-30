@@ -1,8 +1,19 @@
 # TODO temporal rama develop
-- Manejo de error cuando se pasa del limite en una publicacion normal (actualmente sale una excepcion y no un mensaje de error).
-
-- Admin puede asignarle x cantidad de almacenes a una ong y ong puede solicitar / ofertar desde alguno de sus almacenes asignados.
-
-- Agregar barra de navegacion y permitir a cualquiera de los tres tipos de usuario acceder a los feed de los otros tipos, pero limitar interaccion.
 
 - Agregar vista para ver las Ong registradas y sus estadisticas (donaciones, campañas, etc) 
+
+- Boton para mostrar contrasenia en auth y register
+
+- Boton para regresar en create_post
+
+- Alertas flotantes con 15 segundos antes de desaparecer automaticamente. Que estas esten en todas las vistas
+
+- Limitar la cantidad cuando usuario individual interactua con publicaciones
+
+- Admin: opcion para Rechazar transaccion. Actualmente solo deja acepta.
+
+- Verificar que cuando una empresa ofrezca algo, que esta cantidad baje del inventario, y si se llega a cancelar la publi que se regrese el restante (Si era de 100 y habian dado 50 ya, que se queden esos 50). 
+Cuando haya una transaccion pendiente, si se borra la publi se cancela la transaccion automaticamente. 
+Mostrar en la publicacion la cantidad que esta pendiente por aprobar.
+
+- Seccion Mis publicaciones asegurar que todos tengan la misma y borrar boton borrar publi de crear_publicacion
