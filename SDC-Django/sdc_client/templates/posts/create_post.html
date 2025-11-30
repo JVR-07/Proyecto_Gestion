@@ -19,9 +19,6 @@
                 </h2>
                 <p class="text-slate-400 text-sm mt-1">Completa la información para la comunidad.</p>
             </div>
-            <div class="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white text-lg">
-                {% if is_edit %}✏️{% else %}📝{% endif %}
-            </div>
         </div>
 
         <form method="POST" class="p-8 space-y-6" novalidate>
@@ -111,7 +108,7 @@
 
             <div class="pt-4 flex flex-col gap-3">
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/30 transition transform active:scale-[0.98] text-base flex justify-center items-center gap-2">
-                    {% if is_edit %}💾 Guardar Cambios{% else %}🚀 Publicar Ahora{% endif %}
+                    {% if is_edit %} Guardar Cambios{% else %} Publicar Ahora{% endif %}
                 </button>
 
                 {% if is_edit %}

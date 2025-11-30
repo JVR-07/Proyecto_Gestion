@@ -43,33 +43,17 @@
                     <a href="{% url 'home' %}" class="flex items-center gap-2 text-2xl font-bold text-brand-700 font-heading tracking-tight">
                         <span>🌍</span> SDC
                     </a>
-                    {% if user.is_authenticated %}
-                    <div class="hidden md:flex ml-10 space-x-1">
-                        {% if user.donee %}
-                            <a href="{% url 'donee_feed' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Solicitudes</a>
-                        {% elif user.donor %}
-                            <a href="{% url 'donor_feed' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Donaciones</a>
-                        {% elif user.institution %}
-                            <a href="{% url 'institution_feed' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Panel Institución</a>
-                        {% endif %}
-                    </div>
-                    {% endif %}
                 </div>
 
                 <div class="flex items-center gap-3">
-                    {% if user.is_authenticated %}
-                        <div class="hidden sm:flex flex-col items-end mr-2">
-                            <span class="text-xs font-bold text-gray-700">{{ user.email }}</span>
-                        </div>
-                                                
+                    {% if user.is_authenticated %}                                                
                         <button onclick="handleLogout('{% url 'logout' %}')" class="p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-red-50" title="Cerrar Sesión">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </button>
                     {% else %}
-                        <a href="{% url 'login' %}" class="text-brand-600 hover:text-brand-800 font-medium text-sm px-3">Entrar</a>
-                        <a href="{% url 'register' %}" class="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition">Registrarse</a>
+                        <a href="{% url 'login' %}" class="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition">Iniciar Sesión</a>
                     {% endif %}
                 </div>
             </div>

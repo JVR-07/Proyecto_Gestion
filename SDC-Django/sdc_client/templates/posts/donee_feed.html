@@ -10,20 +10,19 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             
             <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 border border-brand-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                    </div>
-                    <div class="text-left">
-                        <h2 class="font-bold text-gray-900 text-lg">Mis Solicitudes</h2>
-                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
-                    </div>
-                </div>
+              <div class="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 border border-brand-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <div class="text-left">
+                <h2 class="font-bold text-gray-900 text-lg">Mis Solicitudes</h2>
+                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+              </div>
+            </div>
 
             <hr class="my-6 border-gray-100">
 
-            <h3 class="font-heading font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">Tus Solicitudes Recientes</h3>
             <div class="space-y-3">
                 {% for post in my_posts|slice:":3" %}
                 <div class="group flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition cursor-pointer" onclick="window.location.href='{% url 'edit_post' post.id %}'">
@@ -107,7 +106,7 @@
             
             <div class="absolute top-4 right-4 flex gap-2">
                 {% if post.is_campaign %}
-                <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">CAMPAÑA</span>
+                <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">Campaña</span>
                 {% endif %}
                 <span class="{% if post.post_type == 'OFFER' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %} text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                     {{ post.get_post_type_display }}
@@ -166,7 +165,11 @@
         </article>
         {% empty %}
         <div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-            <p class="text-gray-400 font-medium">No hay publicaciones disponibles por el momento.</p>
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 mb-4 text-gray-300">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">Sin Ofertas Disponibles</h3>
+            <p class="text-gray-500 mt-1">¡Gracias por tu disposición a ayudar!</p>
         </div>
         {% endfor %}
     </div>
