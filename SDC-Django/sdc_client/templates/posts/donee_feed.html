@@ -8,20 +8,18 @@
     
     <div class="hidden lg:block lg:col-span-4 sticky top-24">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center gap-4 mb-6">
-                <div class="h-14 w-14 rounded-full bg-brand-100 flex items-center justify-center text-2xl">👤</div>
-                <div>
-                    <h2 class="font-heading font-bold text-gray-900">Hola, Usuario</h2>
-                    <p class="text-sm text-gray-500">Donatario Verificado</p>
-                </div>
-            </div>
             
-            <div class="space-y-4">
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                    <span class="text-sm font-medium text-gray-600">Solicitudes Activas</span>
-                    <span class="text-lg font-bold text-brand-600">{{ my_posts.count }}</span>
+            <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 border border-brand-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div class="text-left">
+                        <h2 class="font-bold text-gray-900 text-lg">Mis Solicitudes</h2>
+                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                    </div>
                 </div>
-            </div>
 
             <hr class="my-6 border-gray-100">
 
