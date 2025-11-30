@@ -77,8 +77,14 @@ def edit_post(request, post_id):
     if post.author != request.user:
         messages.error(request, "No tienes permiso para editar esta publicación.")
         return redirect('home')
+    
+    is_readonly = post.status in [Post.PostStatus.CANCELLED, Post.PostStatus.COMPLETED]
 
     if request.method == 'POST':
+        if is_readonly:
+            messages.error(request, "No puedes editar una publicación cerrada.")
+            return redirect('home')
+        
         form = PostForm(request.POST, instance=post, user=request.user)
         if form.is_valid():
             try:
@@ -100,7 +106,9 @@ def edit_post(request, post_id):
 
     context = {
         'form': form,
-        'is_edit': True
+        'is_edit': True,
+        'is_readonly': is_readonly,
+        'post_status': post.get_status_display()
     }
     return render(request, 'posts/create_post.html', context)
 
