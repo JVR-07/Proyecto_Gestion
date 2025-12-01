@@ -43,7 +43,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
     creation_date = models.DateTimeField(default=timezone.now)
-    phone = models.CharField(max_length=20, unique=True)
+    phone = models.CharField(max_length=20, unique=False, null=True)
     status = models.ForeignKey(Status, on_delete=models.PROTECT)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -59,10 +59,10 @@ class Donee(models.Model):
     first_name = models.CharField(max_length=255)
     middle_name = models.CharField(max_length=255, blank=True, null=True)
     first_surname = models.CharField(max_length=255)
-    second_surname = models.CharField(max_length=255)
+    second_surname = models.CharField(max_length=255, null=True)
     curp = models.CharField(max_length=18, unique=True)
-    city = models.CharField(max_length=255)
-    state = models.CharField(max_length=255)
+    city = models.CharField(max_length=255, null=True)
+    state = models.CharField(max_length=255, null=True)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     def __str__(self):
         return f"{self.first_name} {self.first_surname}"
@@ -72,10 +72,10 @@ class Donor(models.Model):
     first_name = models.CharField(max_length=255)
     middle_name = models.CharField(max_length=255, blank=True, null=True)
     first_surname = models.CharField(max_length=255)
-    second_surname = models.CharField(max_length=255)
+    second_surname = models.CharField(max_length=255, null=True)
     curp = models.CharField(max_length=18, unique=True)
-    city = models.CharField(max_length=255)
-    state = models.CharField(max_length=255)
+    city = models.CharField(max_length=255, null=True)
+    state = models.CharField(max_length=255, null=True)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     def __str__(self):
         return f"{self.first_name} {self.first_surname}"
@@ -84,9 +84,9 @@ class Institution(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     name = models.CharField(max_length=255, unique=True)
     rfc = models.CharField(max_length=13, unique=True)
-    city = models.CharField(max_length=255)
-    state = models.CharField(max_length=255)
-    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=255, null=True)
+    state = models.CharField(max_length=255, null=True)
+    address = models.CharField(max_length=255, null=True)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     warehouses = models.ManyToManyField(
         'Warehouse', 
