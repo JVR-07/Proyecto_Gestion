@@ -138,6 +138,13 @@
                 <span class="{% if post.post_type == 'OFFER' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %} text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                     {{ post.get_post_type_display }}
                 </span>
+                <button onclick="openReportModal('{% url 'report_post' post.id %}', '{{ post.title|escapejs }}')" 
+                    class="bg-white/90 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full shadow-sm backdrop-blur-sm transition z-10"
+                    title="Reportar publicación">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </button>
             </div>
 
             <div class="p-6 pb-4">
@@ -202,4 +209,49 @@
         {% endfor %}
     </div>
 </div>
+
+<div id="reportModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" onclick="closeReportModal()"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg">
+                    <form id="reportForm" method="POST" action="">
+                        {% csrf_token %}
+                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                    <h3 class="text-lg font-semibold leading-6 text-gray-900">Reportar Publicación</h3>
+                                    <p id="reportPostTitle" class="text-sm text-gray-500 mt-1 italic mb-4"></p>
+                                    
+                                    <textarea name="reason" rows="3" required 
+                                              class="w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6 p-2"
+                                              placeholder="Describe por qué reportas esto (spam, fraude, ofensivo...)"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                            <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Enviar Reporte</button>
+                            <button type="button" onclick="closeReportModal()" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function openReportModal(url, title) {
+         document.getElementById('reportForm').action = url;
+        document.getElementById('reportPostTitle').textContent = `"${title}"`;
+        document.getElementById('reportModal').classList.remove('hidden');
+    }
+    function closeReportModal() {
+        document.getElementById('reportModal').classList.add('hidden');
+    }
+</script>
 {% endblock %}

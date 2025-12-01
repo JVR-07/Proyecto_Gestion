@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}ONGs y Estadísticas{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+        <h1 class="text-3xl font-heading font-bold text-gray-900">Instituciones Registradas</h1>
+        <p class="text-gray-500 mt-2">Transparencia e impacto de nuestros aliados.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in stats_data %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-bold text-xl border border-brand-100">
+                        {{ item.institution.name|slice:":1" }}
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg leading-tight">{{ item.institution.name }}</h3>
+                        <p class="text-xs text-gray-400">{{ item.institution.city }}, {{ item.institution.state }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-800">{{ item.donated_qty|floatformat:0 }}</span>
+                    <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Donado</span>
+                </div>
+                <div>
+                    <span class="block text-2xl font-bold text-purple-600">{{ item.active_campaigns }}</span>
+                    <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Campañas</span>
+                </div>
+                <div>
+                    <span class="block text-2xl font-bold text-green-600">{{ item.total_inventory|floatformat:0 }}</span>
+                    <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Stock Total</span>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 px-6 py-3 text-xs text-gray-500 border-t border-gray-100 flex justify-between">
+                <span>RFC: {{ item.institution.rfc }}</span>
+                <span>Miembro desde: {{ item.institution.created_at|date:"Y" }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center col-span-full text-gray-500">No hay instituciones registradas aún.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -8,9 +8,9 @@ import json
 from decimal import Decimal
 
 # --- FORMULARIOS ---
-from .forms import PersonRegistrationForm, InstitutionRegistrationForm, PostForm
+from .forms import PersonRegistrationForm, InstitutionRegistrationForm, PostForm, ReportForm
 # --- MODELOS ---
-from .models import CustomUser, Donee, Donor, Institution, Post, Transaction, InventoryItem, Warehouse
+from .models import CustomUser, Donee, Donor, Institution, Post, Transaction, InventoryItem, Warehouse, Report
 
 # Importaciones para JWT y Vistas de API (para el login)
 from rest_framework.decorators import api_view, permission_classes
@@ -305,6 +305,68 @@ def register(request):
         'institution_form': institution_form,
     }
     return render(request, 'login/register.html', context)
+
+@login_required
+def institution_list_view(request):
+    """
+    Muestra una lista de todas las Instituciones registradas
+    con sus estadísticas clave.
+    """
+    institutions = Institution.objects.all()
+    
+    stats_data = []
+    
+    for inst in institutions:
+        # 1. Total Donado (Ofertas aprobadas)
+        # Buscamos transacciones donde el post sea de esta institución y tipo OFFER
+        donated_qty = Transaction.objects.filter(
+            post__author=inst.user,
+            post__post_type=Post.PostType.OFFER,
+            status=Transaction.TransactionStatus.APPROVED
+        ).aggregate(total=Sum('quantity_committed'))['total'] or 0
+        
+        # 2. Campañas Activas (Requests que son campañas)
+        active_campaigns = Post.objects.filter(
+            author=inst.user,
+            post_type=Post.PostType.REQUEST,
+            is_campaign=True,
+            status=Post.PostStatus.ACTIVE
+        ).count()
+
+        # 3. Inventario Total (Suma de cantidades en sus almacenes)
+        # Usamos la relación inversa 'warehouses' -> 'inventory_items'
+        total_inventory = InventoryItem.objects.filter(
+            warehouse__in=inst.warehouses.all()
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        stats_data.append({
+            'institution': inst,
+            'donated_qty': donated_qty,
+            'active_campaigns': active_campaigns,
+            'total_inventory': total_inventory
+        })
+
+    context = {
+        'stats_data': stats_data
+    }
+    return render(request, 'stats/institution_list.html', context)
+
+@login_required
+def report_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.method == 'POST':
+        form = ReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.post = post
+            report.reporter = request.user
+            report.save()
+            messages.success(request, "Tu reporte ha sido enviado a los administradores.")
+        else:
+            messages.error(request, "Error al enviar el reporte. Revisa el motivo.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
 # --- Lógica de Login (Backend) con JWT ---
