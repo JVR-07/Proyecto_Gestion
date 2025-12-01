@@ -59,10 +59,37 @@
                     <div class="space-y-1">
                         {{ person_form.person_first_name.label_tag }}
                         {{ person_form.person_first_name }}
-                        <p id="person-name-feedback" class="h-4"></p> </div>
+                        <p id="person-name-feedback" class="h-4"></p> 
+                    </div>
+                    <div class="space-y-1">
+                        {{ person_form.person_middle_name.label_tag }} {{ person_form.person_middle_name }}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
                         {{ person_form.person_first_surname.label_tag }}
                         {{ person_form.person_first_surname }}
+                    </div>
+                    <div class="space-y-1">
+                        {{ person_form.person_second_surname.label_tag }} {{ person_form.person_second_surname }}
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    {{ person_form.person_phone.label_tag }}
+                    {{ person_form.person_phone }}
+                    <p id="person-phone-feedback" class="h-4"></p> 
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        {{ person_form.person_city.label_tag }}
+                        {{ person_form.person_city }}
+                    </div>
+                    <div class="space-y-1">
+                        {{ person_form.person_state.label_tag }}
+                        {{ person_form.person_state }}
                     </div>
                 </div>
                 
@@ -121,6 +148,26 @@
                     {{ institution_form.institution_rfc.label_tag }} 
                     {{ institution_form.institution_rfc }}
                     <p id="rfc-feedback" class="h-4"></p>
+                </div>
+                <div class="space-y-1">
+                    {{ institution_form.institution_phone.label_tag }}
+                    {{ institution_form.institution_phone }}
+                </div>
+
+                <div class="space-y-1">
+                    {{ institution_form.institution_address.label_tag }}
+                    {{ institution_form.institution_address }}
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        {{ institution_form.institution_city.label_tag }}
+                        {{ institution_form.institution_city }}
+                    </div>
+                    <div class="space-y-1">
+                        {{ institution_form.institution_state.label_tag }}
+                        {{ institution_form.institution_state }}
+                    </div>
                 </div>
                 <div class="space-y-1">
                     {{ institution_form.institution_email.label_tag }} 
