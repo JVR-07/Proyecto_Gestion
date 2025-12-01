@@ -247,6 +247,7 @@ def create_transaction(request, post_id):
 def register(request):
     person_form = PersonRegistrationForm()
     institution_form = InstitutionRegistrationForm()
+    
     if request.method == 'POST':
         if 'person_curp' in request.POST:
             person_form = PersonRegistrationForm(request.POST)
@@ -254,29 +255,34 @@ def register(request):
                 data = person_form.cleaned_data
                 try:
                     with transaction.atomic():
+                       
                         user = CustomUser.objects.create_user(
                             email=data['person_email'],
-                            phone=data['person_phone'],
+                            phone=data['person_phone'], 
                             password=data['person_password']
                         )
+                        
                         profile_data = {
                             'user': user,
                             'first_name': data['person_first_name'],
-                            'middle_name': data['person_middle_name'],
+                            'middle_name': data.get('person_middle_name', ''), 
                             'first_surname': data['person_first_surname'],
-                            'second_surname': data['person_second_surname'],
+                            'second_surname': data.get('person_second_surname', ''), 
                             'curp': data['person_curp'],
-                            'city': data['person_city'],
-                            'state': data['person_state']
+                            'city': data['person_city'],  
+                            'state': data['person_state']  
                         }
+                        
                         if data['user_type'] == 'donee':
                             Donee.objects.create(**profile_data)
-                        else: # 'donor'
+                        else: 
                             Donor.objects.create(**profile_data)
+                            
                     messages.success(request, '¡Registro exitoso! Por favor, inicia sesión.')
                     return redirect('auth')
-                except Exception:
-                    messages.error(request, 'No se pudo completar el registro. Verifica que el correo no esté registrado.')
+                except Exception as e:
+                    messages.error(request, f'No se pudo completar el registro: {e}')
+
         elif 'institution_rfc' in request.POST:
             institution_form = InstitutionRegistrationForm(request.POST)
             if institution_form.is_valid():
@@ -285,21 +291,23 @@ def register(request):
                     with transaction.atomic():
                         user = CustomUser.objects.create_user(
                             email=data['institution_email'],
-                            phone=data['institution_rfc'],
+                            phone=data['institution_phone'], 
                             password=data['institution_password']
                         )
+                        
                         Institution.objects.create(
                             user=user,
                             name=data['institution_name'],
                             rfc=data['institution_rfc'],
-                            city=data['institution_city'],
-                            state=data['institution_state'],
-                            address=data['institution_address']
+                            city=data['institution_city'],     
+                            state=data['institution_state'],    
+                            address=data['institution_address']  
                         )
                     messages.success(request, '¡Registro de institución exitoso! Por favor, inicia sesión.')
                     return redirect('auth')
-                except Exception:
-                    messages.error(request, 'Error al registrar la institución. Es posible que el RFC o correo ya existan.')
+                except Exception as e:
+                    messages.error(request, f'Error al registrar la institución: {e}')
+
     context = {
         'person_form': person_form,
         'institution_form': institution_form,
