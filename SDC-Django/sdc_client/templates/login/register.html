@@ -16,6 +16,20 @@
 
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
         
+        <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+        {% if messages %}
+            {% for message in messages %}
+                 <div class="toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md bg-green-500/95 border-green-700">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Notificación</span>
+                        <span class="font-medium text-sm leading-snug">{{ message }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 text-white/70 hover:text-white">✕</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        </div>
+
         <div class="hidden md:block w-1/3 bg-brand-600 p-8 text-white flex flex-col justify-between">
             <div>
                 <h1 class="text-3xl font-bold mb-4">SDC</h1>
@@ -37,14 +51,6 @@
                     Institución
                 </button>
             </div>
-
-            {% if messages %}
-                <div class="mb-4">
-                    {% for message in messages %}
-                        <div class="p-3 rounded bg-blue-50 text-blue-700 text-sm mb-2">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
 
             <form id="form-person" class="form space-y-4" method="POST" novalidate>
                 {% csrf_token %}
@@ -206,6 +212,45 @@
                 eyeClosed.classList.add('hidden');
             }
         }
+    </script>
+
+    <script>
+        // ... (Pegar aquí las funciones dismissToast y showFloatingToast del paso 1) ...
+        // Asegúrate de que login-logic.js pueda llamar a showFloatingToast
+        
+        function dismissToast(element) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(20px)';
+            setTimeout(() => element.remove(), 300);
+        }
+        
+        function showFloatingToast(message, type = 'info') {
+            const container = document.getElementById('toast-container') || createToastContainer();
+            const colors = {
+                'error': 'bg-red-500/95 border-red-700',
+                'success': 'bg-green-500/95 border-green-700'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md transition-all duration-500 transform translate-x-full opacity-0 ${colors[type] || colors['success']}`;
+            toast.innerHTML = `<div class="flex flex-col"><span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">${type === 'error' ? 'Error' : 'Info'}</span><span class="font-medium text-sm leading-snug">${message}</span></div><button onclick="dismissToast(this.parentElement)" class="ml-4 text-white">✕</button>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+            setTimeout(() => dismissToast(toast), 15000);
+        }
+        
+        function createToastContainer() {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            div.className = "fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm pointer-events-none";
+            document.body.appendChild(div);
+            return div;
+        }
+        
+        // Inicializar los mensajes que vienen del servidor (ej. Registro exitoso)
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(t => setTimeout(() => dismissToast(t), 15000));
+        });
     </script>
 </body>
 </html>

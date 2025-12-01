@@ -309,13 +309,6 @@ class Transaction(models.Model):
 
             # Caso: Donatario acepta de Institución (Resta de inventario)
             elif post_type == Post.PostType.OFFER and author_type == 'institution' and participant_type == 'donee':
-                if not warehouse:
-                    raise Exception("Se requiere un almacén de origen para este retiro.")
-                inventory_item, _ = InventoryItem.objects.get_or_create(warehouse=warehouse, category=category, defaults={'quantity': 0})
-                if inventory_item.quantity < quantity:
-                    raise Exception(f"Stock insuficiente de {category.name} en {warehouse.name}.")
-                inventory_item.quantity -= quantity
-                inventory_item.save()
                 self.status = self.TransactionStatus.APPROVED
                 self.save()
                 # --- Bloque de auto-cierre ---

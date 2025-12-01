@@ -10,6 +10,20 @@
 </head>
 <body class="bg-gray-50 flex items-center justify-center h-screen font-[Inter]">
 
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+        {% if messages %}
+            {% for message in messages %}
+                 <div class="toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md bg-green-500/95 border-green-700">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Notificación</span>
+                        <span class="font-medium text-sm leading-snug">{{ message }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 text-white/70 hover:text-white">✕</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-[#0077B6] font-[Poppins] mb-2">SDC</h1>
@@ -72,6 +86,41 @@
                 eyeClosed.classList.add('hidden');
             }
         }
+    </script>
+
+    <script>
+        function dismissToast(element) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(20px)';
+            setTimeout(() => element.remove(), 300);
+        }
+        
+        function showFloatingToast(message, type = 'info') {
+            const container = document.getElementById('toast-container') || createToastContainer();
+            const colors = {
+                'error': 'bg-red-500/95 border-red-700',
+                'success': 'bg-green-500/95 border-green-700'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md transition-all duration-500 transform translate-x-full opacity-0 ${colors[type] || colors['success']}`;
+            toast.innerHTML = `<div class="flex flex-col"><span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">${type === 'error' ? 'Error' : 'Info'}</span><span class="font-medium text-sm leading-snug">${message}</span></div><button onclick="dismissToast(this.parentElement)" class="ml-4 text-white">✕</button>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+            setTimeout(() => dismissToast(toast), 15000);
+        }
+        
+        function createToastContainer() {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            div.className = "fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm pointer-events-none";
+            document.body.appendChild(div);
+            return div;
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(t => setTimeout(() => dismissToast(t), 15000));
+        });
     </script>
 </body>
 </html>

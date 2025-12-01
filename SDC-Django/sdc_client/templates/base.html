@@ -62,19 +62,27 @@
 
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         
-        {% if messages %}
-            <div class="fixed top-20 right-5 z-50 flex flex-col gap-2 w-full max-w-sm px-4 sm:px-0">
+        <div id="toast-container" class="fixed top-24 right-5 z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+            {% if messages %}
                 {% for message in messages %}
-                    <div class="animate-bounce-in shadow-lg rounded-lg p-4 border-l-4 text-white flex justify-between items-center backdrop-blur-sm
-                        {% if message.tags == 'error' %}bg-red-500/90 border-red-700
-                        {% elif message.tags == 'success' %}bg-green-500/90 border-green-700
-                        {% else %}bg-blue-500/90 border-blue-700{% endif %}">
-                        <span class="font-medium text-sm">{{ message }}</span>
-                        <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">✕</button>
+                    <div class="toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md transition-all duration-500 transform translate-x-0 opacity-100
+                        {% if message.tags == 'error' %}bg-red-500/95 border-red-700
+                        {% elif message.tags == 'success' %}bg-green-500/95 border-green-700
+                        {% elif message.tags == 'warning' %}bg-yellow-500/95 border-yellow-700
+                        {% else %}bg-blue-500/95 border-blue-700{% endif %}">
+                        <div class="flex flex-col">
+                            {% if message.tags == 'error' %}
+                                <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Error</span>
+                            {% elif message.tags == 'success' %}
+                                <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Éxito</span>
+                            {% endif %}
+                            <span class="font-medium text-sm leading-snug">{{ message }}</span>
+                        </div>
+                        <button onclick="dismissToast(this.parentElement)" class="ml-4 text-white/70 hover:text-white transition p-1">✕</button>
                     </div>
                 {% endfor %}
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
 
         {% block content %}{% endblock %}
     </main>
@@ -131,5 +139,65 @@
 
     <script src="{% static 'login/scripts/logout-logic.js' %}"></script>
     <script src="{% static 'posts/scripts/cancel-post-modal.js' %}"></script>
+    <script>
+        function dismissToast(element) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(20px)';
+            setTimeout(() => element.remove(), 300); // Esperar a que termine la animación
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(toast => {
+                // Configurar temporizador de 15 segundos (15000 ms)
+                setTimeout(() => {
+                    dismissToast(toast);
+                }, 15000);
+            });
+        });
+
+        // Función helper para crear toasts desde JS (usada en login)
+        function showFloatingToast(message, type = 'info') {
+            const container = document.getElementById('toast-container') || createToastContainer();
+            
+            const colors = {
+                'error': 'bg-red-500/95 border-red-700',
+                'success': 'bg-green-500/95 border-green-700',
+                'warning': 'bg-yellow-500/95 border-yellow-700',
+                'info': 'bg-blue-500/95 border-blue-700'
+            };
+            
+            const titles = { 'error': 'Error', 'success': 'Éxito', 'warning': 'Aviso', 'info': 'Info' };
+
+            const toast = document.createElement('div');
+            toast.className = `toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md transition-all duration-500 transform translate-x-full opacity-0 ${colors[type] || colors['info']}`;
+            
+            toast.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">${titles[type] || 'Info'}</span>
+                    <span class="font-medium text-sm leading-snug">${message}</span>
+                </div>
+                <button onclick="dismissToast(this.parentElement)" class="ml-4 text-white/70 hover:text-white transition p-1">✕</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Animación de entrada
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            // Auto-cierre
+            setTimeout(() => dismissToast(toast), 15000);
+        }
+
+        function createToastContainer() {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            div.className = "fixed top-24 right-5 z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 pointer-events-none";
+            document.body.appendChild(div);
+            return div;
+        }
+    </script>
 </body>
 </html>

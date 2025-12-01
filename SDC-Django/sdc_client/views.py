@@ -10,7 +10,7 @@ from decimal import Decimal
 # --- FORMULARIOS ---
 from .forms import PersonRegistrationForm, InstitutionRegistrationForm, PostForm
 # --- MODELOS ---
-from .models import CustomUser, Donee, Donor, Institution, Post, Transaction
+from .models import CustomUser, Donee, Donor, Institution, Post, Transaction, InventoryItem, Warehouse
 
 # Importaciones para JWT y Vistas de API (para el login)
 from rest_framework.decorators import api_view, permission_classes
@@ -38,36 +38,36 @@ def create_post(request):
             post.author = request.user
             redirect_url = 'home' 
             try:
-                # Corregido: usa la lógica 'try/except' para perfiles
                 try:
-                    if request.user.donee:
-                        post.post_type = Post.PostType.REQUEST
-                        post.is_campaign = False 
-                        redirect_url = 'donee_feed'
-                except Donee.DoesNotExist:
-                    try:
-                        if request.user.donor:
-                            post.post_type = Post.PostType.OFFER
-                            post.is_campaign = False
-                            redirect_url = 'donor_feed'
-                    except Donor.DoesNotExist:
-                        try:
-                            if request.user.institution:
-                                redirect_url = 'institution_feed'
-                        except Institution.DoesNotExist:
-                             messages.error(request, 'Error: Tu perfil de usuario no está completo.')
-                             return redirect('home')
+                    if request.user.institution:
+                        redirect_url = 'institution_feed'
+                        
+                        if post.post_type == Post.PostType.OFFER and post.warehouse:
+                            inventory_item = InventoryItem.objects.get(
+                                warehouse=post.warehouse, 
+                                category=post.category
+                            )
+                            inventory_item.quantity -= post.quantity
+                            inventory_item.save()
+                            
+                            messages.info(request, f"Se han reservado {post.quantity} del almacén '{post.warehouse.name}'.")
+
+                except Institution.DoesNotExist:
+                        messages.error(request, 'Error: Tu perfil de usuario no está completo.')
+                        return redirect('home')
 
                 post.save() 
                 messages.success(request, '¡Publicación creada con éxito!')
                 return redirect(redirect_url) 
+            
+            except InventoryItem.DoesNotExist:
+                form.add_error(None, "Error crítico: No se encontró el inventario para reservar.")
             except Exception as e:
-                form.add_error(None, f"Error al procesar el tipo de usuario: {e}")
+                form.add_error(None, f"Error al procesar la publicación: {e}")
     else:
         form = PostForm(user=request.user)
-    context = {
-        'form': form
-    }
+    
+    context = {'form': form}
     return render(request, 'posts/create_post.html', context)
 
 @login_required
@@ -99,8 +99,8 @@ def edit_post(request, post_id):
                     return redirect('donee_feed')
                 return redirect('home')
                 
-            except Exception as e:
-                messages.error(request, f"Error al actualizar: {e}")
+            except Exception:
+                messages.error(request, "No se pudieron guardar los cambios debido a un error inesperado.")
     else:
         form = PostForm(instance=post, user=request.user)
 
@@ -118,14 +118,36 @@ def close_post(request, post_id):
     
     if post.author != request.user:
         messages.error(request, "No tienes permiso para cerrar esta publicación.")
-    else:
-        # Cambiamos el estado a CANCELLED o COMPLETED según prefieras.
-        # Usaremos CANCELLED para indicar que el usuario la cerró manualmente.
-        post.status = Post.PostStatus.CANCELLED
-        post.save()
-        messages.success(request, "Publicación cerrada/cancelada correctamente.")
+        return redirect('home')
+    
+    try:
+        with transaction.atomic():
+            if post.post_type == Post.PostType.OFFER and hasattr(request.user, 'institution') and post.warehouse:
+                remaining = post.quantity_remaining
+                if remaining > 0:
+                    inventory_item = InventoryItem.objects.get(
+                        warehouse=post.warehouse,
+                        category=post.category
+                    )
+                    inventory_item.quantity += remaining
+                    inventory_item.save()
+                    messages.info(request, f"Se han devuelto {remaining} unidades al inventario de '{post.warehouse.name}'.")
 
-    # Redirigir a la página anterior
+            pending_transactions = post.transactions.filter(status=Transaction.TransactionStatus.PENDING)
+            count_cancelled = pending_transactions.count()
+            pending_transactions.update(status=Transaction.TransactionStatus.REJECTED)
+            
+            post.status = Post.PostStatus.CANCELLED
+            post.save()
+            
+            if count_cancelled > 0:
+                messages.warning(request, f"Publicación cerrada. {count_cancelled} solicitudes pendientes fueron rechazadas automáticamente.")
+            else:
+                messages.success(request, "Publicación cerrada correctamente.")
+
+    except Exception as e:
+        messages.error(request, f"Error al cerrar la publicación: {e}")
+
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 @login_required
@@ -215,8 +237,8 @@ def create_transaction(request, post_id):
         
         except IntegrityError:
             messages.warning(request, 'Ya tienes una interacción pendiente en esta publicación.')
-        except Exception as e:
-            messages.error(request, f'Ocurrió un error: {e}')
+        except Exception:
+            messages.error(request, 'No se pudo procesar tu solicitud. Por favor, verifica los datos e inténtalo de nuevo.')
 
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
@@ -253,8 +275,8 @@ def register(request):
                             Donor.objects.create(**profile_data)
                     messages.success(request, '¡Registro exitoso! Por favor, inicia sesión.')
                     return redirect('auth')
-                except Exception as e:
-                    messages.error(request, f'Error al crear el usuario: {e}')
+                except Exception:
+                    messages.error(request, 'No se pudo completar el registro. Verifica que el correo no esté registrado.')
         elif 'institution_rfc' in request.POST:
             institution_form = InstitutionRegistrationForm(request.POST)
             if institution_form.is_valid():
@@ -276,8 +298,8 @@ def register(request):
                         )
                     messages.success(request, '¡Registro de institución exitoso! Por favor, inicia sesión.')
                     return redirect('auth')
-                except Exception as e:
-                    messages.error(request, f'Error al crear la institución: {e}')
+                except Exception:
+                    messages.error(request, 'Error al registrar la institución. Es posible que el RFC o correo ya existan.')
     context = {
         'person_form': person_form,
         'institution_form': institution_form,
@@ -321,8 +343,8 @@ def api_login_view(request):
                         redirect_url = '/institution_feed'
                 except Institution.DoesNotExist:
                     pass # Se queda con los valores de 'admin'
-        except Exception as e:
-            return JsonResponse({'error': f'Error de servidor inesperado: {e}'}, status=500)
+        except Exception:
+            return JsonResponse({'error': 'Ocurrió un problema técnico al verificar tu cuenta.'}, status=500)
         
         return JsonResponse({
             'message': 'Login exitoso',

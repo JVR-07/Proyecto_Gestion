@@ -66,15 +66,22 @@ def approve_warehouse_transaction(modeladmin, request, queryset):
         except Exception as e:
             messages.error(request, f'Error al aprobar "{transaction}": {e}')
 
+@admin.action(description='Rechazar transacciones seleccionadas')
+def reject_transactions(modeladmin, request, queryset):
+    """
+    Marca las transacciones como rechazadas.
+    Esto libera la cantidad 'pendiente' en la publicación.
+    """
+    updated_count = queryset.update(status=Transaction.TransactionStatus.REJECTED)
+    messages.success(request, f"{updated_count} transacciones han sido rechazadas.")
+
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ('post', 'participant', 'status', 'quantity_committed', 'created_at')
     list_filter = ('status', 'post__category')
     search_fields = ('post__title', 'participant__email')
 
-    # agregar las acciones personalizadas
-    actions = [approve_personal_transaction, approve_warehouse_transaction]
-
+    actions = [approve_personal_transaction, approve_warehouse_transaction, reject_transactions]
 
 admin.site.register(CustomUser)
 admin.site.register(Status)
