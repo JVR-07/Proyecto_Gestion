@@ -309,13 +309,6 @@ class Transaction(models.Model):
 
             # Caso: Donatario acepta de Institución (Resta de inventario)
             elif post_type == Post.PostType.OFFER and author_type == 'institution' and participant_type == 'donee':
-                if not warehouse:
-                    raise Exception("Se requiere un almacén de origen para este retiro.")
-                inventory_item, _ = InventoryItem.objects.get_or_create(warehouse=warehouse, category=category, defaults={'quantity': 0})
-                if inventory_item.quantity < quantity:
-                    raise Exception(f"Stock insuficiente de {category.name} en {warehouse.name}.")
-                inventory_item.quantity -= quantity
-                inventory_item.save()
                 self.status = self.TransactionStatus.APPROVED
                 self.save()
                 # --- Bloque de auto-cierre ---
@@ -351,3 +344,32 @@ class InventoryItem(models.Model):
         unique_together = ('warehouse', 'category')
     def __str__(self):
         return f"{self.quantity} de {self.category.name} en {self.warehouse.name}"
+    
+class Report(models.Model):
+    class ReportStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pendiente de Revisión'
+        VALIDATED = 'VALIDATED', 'Reporte Validado (Publicación Eliminada)'
+        REJECTED = 'REJECTED', 'Reporte Rechazado (Falso Positivo)'
+
+    post = models.ForeignKey(
+        Post, 
+        on_delete=models.CASCADE, 
+        related_name='reports',
+        verbose_name="Publicación Reportada"
+    )
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        verbose_name="Usuario que reporta"
+    )
+    reason = models.TextField(verbose_name="Motivo del reporte")
+    status = models.CharField(
+        max_length=20, 
+        choices=ReportStatus.choices, 
+        default=ReportStatus.PENDING
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Reporte sobre '{self.post.title}' por {self.reporter.email}"

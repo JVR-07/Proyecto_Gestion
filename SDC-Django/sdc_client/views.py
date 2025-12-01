@@ -8,9 +8,9 @@ import json
 from decimal import Decimal
 
 # --- FORMULARIOS ---
-from .forms import PersonRegistrationForm, InstitutionRegistrationForm, PostForm
+from .forms import PersonRegistrationForm, InstitutionRegistrationForm, PostForm, ReportForm
 # --- MODELOS ---
-from .models import CustomUser, Donee, Donor, Institution, Post, Transaction
+from .models import CustomUser, Donee, Donor, Institution, Post, Transaction, InventoryItem, Warehouse, Report
 
 # Importaciones para JWT y Vistas de API (para el login)
 from rest_framework.decorators import api_view, permission_classes
@@ -38,36 +38,36 @@ def create_post(request):
             post.author = request.user
             redirect_url = 'home' 
             try:
-                # Corregido: usa la lógica 'try/except' para perfiles
                 try:
-                    if request.user.donee:
-                        post.post_type = Post.PostType.REQUEST
-                        post.is_campaign = False 
-                        redirect_url = 'donee_feed'
-                except Donee.DoesNotExist:
-                    try:
-                        if request.user.donor:
-                            post.post_type = Post.PostType.OFFER
-                            post.is_campaign = False
-                            redirect_url = 'donor_feed'
-                    except Donor.DoesNotExist:
-                        try:
-                            if request.user.institution:
-                                redirect_url = 'institution_feed'
-                        except Institution.DoesNotExist:
-                             messages.error(request, 'Error: Tu perfil de usuario no está completo.')
-                             return redirect('home')
+                    if request.user.institution:
+                        redirect_url = 'institution_feed'
+                        
+                        if post.post_type == Post.PostType.OFFER and post.warehouse:
+                            inventory_item = InventoryItem.objects.get(
+                                warehouse=post.warehouse, 
+                                category=post.category
+                            )
+                            inventory_item.quantity -= post.quantity
+                            inventory_item.save()
+                            
+                            messages.info(request, f"Se han reservado {post.quantity} del almacén '{post.warehouse.name}'.")
+
+                except Institution.DoesNotExist:
+                        messages.error(request, 'Error: Tu perfil de usuario no está completo.')
+                        return redirect('home')
 
                 post.save() 
                 messages.success(request, '¡Publicación creada con éxito!')
                 return redirect(redirect_url) 
+            
+            except InventoryItem.DoesNotExist:
+                form.add_error(None, "Error crítico: No se encontró el inventario para reservar.")
             except Exception as e:
-                form.add_error(None, f"Error al procesar el tipo de usuario: {e}")
+                form.add_error(None, f"Error al procesar la publicación: {e}")
     else:
         form = PostForm(user=request.user)
-    context = {
-        'form': form
-    }
+    
+    context = {'form': form}
     return render(request, 'posts/create_post.html', context)
 
 @login_required
@@ -77,8 +77,14 @@ def edit_post(request, post_id):
     if post.author != request.user:
         messages.error(request, "No tienes permiso para editar esta publicación.")
         return redirect('home')
+    
+    is_readonly = post.status in [Post.PostStatus.CANCELLED, Post.PostStatus.COMPLETED]
 
     if request.method == 'POST':
+        if is_readonly:
+            messages.error(request, "No puedes editar una publicación cerrada.")
+            return redirect('home')
+        
         form = PostForm(request.POST, instance=post, user=request.user)
         if form.is_valid():
             try:
@@ -93,14 +99,16 @@ def edit_post(request, post_id):
                     return redirect('donee_feed')
                 return redirect('home')
                 
-            except Exception as e:
-                messages.error(request, f"Error al actualizar: {e}")
+            except Exception:
+                messages.error(request, "No se pudieron guardar los cambios debido a un error inesperado.")
     else:
         form = PostForm(instance=post, user=request.user)
 
     context = {
         'form': form,
-        'is_edit': True
+        'is_edit': True,
+        'is_readonly': is_readonly,
+        'post_status': post.get_status_display()
     }
     return render(request, 'posts/create_post.html', context)
 
@@ -110,14 +118,36 @@ def close_post(request, post_id):
     
     if post.author != request.user:
         messages.error(request, "No tienes permiso para cerrar esta publicación.")
-    else:
-        # Cambiamos el estado a CANCELLED o COMPLETED según prefieras.
-        # Usaremos CANCELLED para indicar que el usuario la cerró manualmente.
-        post.status = Post.PostStatus.CANCELLED
-        post.save()
-        messages.success(request, "Publicación cerrada/cancelada correctamente.")
+        return redirect('home')
+    
+    try:
+        with transaction.atomic():
+            if post.post_type == Post.PostType.OFFER and hasattr(request.user, 'institution') and post.warehouse:
+                remaining = post.quantity_remaining
+                if remaining > 0:
+                    inventory_item = InventoryItem.objects.get(
+                        warehouse=post.warehouse,
+                        category=post.category
+                    )
+                    inventory_item.quantity += remaining
+                    inventory_item.save()
+                    messages.info(request, f"Se han devuelto {remaining} unidades al inventario de '{post.warehouse.name}'.")
 
-    # Redirigir a la página anterior
+            pending_transactions = post.transactions.filter(status=Transaction.TransactionStatus.PENDING)
+            count_cancelled = pending_transactions.count()
+            pending_transactions.update(status=Transaction.TransactionStatus.REJECTED)
+            
+            post.status = Post.PostStatus.CANCELLED
+            post.save()
+            
+            if count_cancelled > 0:
+                messages.warning(request, f"Publicación cerrada. {count_cancelled} solicitudes pendientes fueron rechazadas automáticamente.")
+            else:
+                messages.success(request, "Publicación cerrada correctamente.")
+
+    except Exception as e:
+        messages.error(request, f"Error al cerrar la publicación: {e}")
+
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 @login_required
@@ -207,8 +237,8 @@ def create_transaction(request, post_id):
         
         except IntegrityError:
             messages.warning(request, 'Ya tienes una interacción pendiente en esta publicación.')
-        except Exception as e:
-            messages.error(request, f'Ocurrió un error: {e}')
+        except Exception:
+            messages.error(request, 'No se pudo procesar tu solicitud. Por favor, verifica los datos e inténtalo de nuevo.')
 
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
@@ -245,8 +275,8 @@ def register(request):
                             Donor.objects.create(**profile_data)
                     messages.success(request, '¡Registro exitoso! Por favor, inicia sesión.')
                     return redirect('auth')
-                except Exception as e:
-                    messages.error(request, f'Error al crear el usuario: {e}')
+                except Exception:
+                    messages.error(request, 'No se pudo completar el registro. Verifica que el correo no esté registrado.')
         elif 'institution_rfc' in request.POST:
             institution_form = InstitutionRegistrationForm(request.POST)
             if institution_form.is_valid():
@@ -268,13 +298,75 @@ def register(request):
                         )
                     messages.success(request, '¡Registro de institución exitoso! Por favor, inicia sesión.')
                     return redirect('auth')
-                except Exception as e:
-                    messages.error(request, f'Error al crear la institución: {e}')
+                except Exception:
+                    messages.error(request, 'Error al registrar la institución. Es posible que el RFC o correo ya existan.')
     context = {
         'person_form': person_form,
         'institution_form': institution_form,
     }
     return render(request, 'login/register.html', context)
+
+@login_required
+def institution_list_view(request):
+    """
+    Muestra una lista de todas las Instituciones registradas
+    con sus estadísticas clave.
+    """
+    institutions = Institution.objects.all()
+    
+    stats_data = []
+    
+    for inst in institutions:
+        # 1. Total Donado (Ofertas aprobadas)
+        # Buscamos transacciones donde el post sea de esta institución y tipo OFFER
+        donated_qty = Transaction.objects.filter(
+            post__author=inst.user,
+            post__post_type=Post.PostType.OFFER,
+            status=Transaction.TransactionStatus.APPROVED
+        ).aggregate(total=Sum('quantity_committed'))['total'] or 0
+        
+        # 2. Campañas Activas (Requests que son campañas)
+        active_campaigns = Post.objects.filter(
+            author=inst.user,
+            post_type=Post.PostType.REQUEST,
+            is_campaign=True,
+            status=Post.PostStatus.ACTIVE
+        ).count()
+
+        # 3. Inventario Total (Suma de cantidades en sus almacenes)
+        # Usamos la relación inversa 'warehouses' -> 'inventory_items'
+        total_inventory = InventoryItem.objects.filter(
+            warehouse__in=inst.warehouses.all()
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        stats_data.append({
+            'institution': inst,
+            'donated_qty': donated_qty,
+            'active_campaigns': active_campaigns,
+            'total_inventory': total_inventory
+        })
+
+    context = {
+        'stats_data': stats_data
+    }
+    return render(request, 'stats/institution_list.html', context)
+
+@login_required
+def report_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    
+    if request.method == 'POST':
+        form = ReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.post = post
+            report.reporter = request.user
+            report.save()
+            messages.success(request, "Tu reporte ha sido enviado a los administradores.")
+        else:
+            messages.error(request, "Error al enviar el reporte. Revisa el motivo.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
 # --- Lógica de Login (Backend) con JWT ---
@@ -313,8 +405,8 @@ def api_login_view(request):
                         redirect_url = '/institution_feed'
                 except Institution.DoesNotExist:
                     pass # Se queda con los valores de 'admin'
-        except Exception as e:
-            return JsonResponse({'error': f'Error de servidor inesperado: {e}'}, status=500)
+        except Exception:
+            return JsonResponse({'error': 'Ocurrió un problema técnico al verificar tu cuenta.'}, status=500)
         
         return JsonResponse({
             'message': 'Login exitoso',

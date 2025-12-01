@@ -1,182 +1,222 @@
 document.addEventListener("DOMContentLoaded", () => {
-    
-    // --- Regex para validación ---
+    console.log("Register Validation Script Loaded");   
+    // --- Expresiones Regulares ---
     const REGEX = {
-        noNumbers: /^[a-zA-Z\s]+$/,
-        onlyNumbers: /^\d+$/,
         email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        curp: /^[A-ZÑ][AEIOU][A-ZÑ]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[HM](AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS)[B-DF-HJ-NP-TV-ZÑ]{3}[A-Z0-9][0-9]$/,
-        rfc: /^[A-ZÑ]{4}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}$|^[A-Z&Ñ]{3}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}$/
+        // CURP: 4 letras, 6 números, H/M, 2 letras entidad, 3 consonantes, 1 homoclave, 1 dígito verificador
+        curp: /^[A-Z]{1}[AEIOU]{1}[A-Z]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[HM]{1}(AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z]{1}[0-9]{1}$/,
+        // RFC: 3-4 letras, 6 números, 3 homoclave
+        rfc: /^([A-ZÑ&]{3,4}) ?(?:- ?)?(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])) ?(?:- ?)?([A-Z\d]{2})([A\d])$/,
+        // Solo números (para validar que no haya letras en campos numéricos)
+        onlyNumbers: /^\d+$/,
+        // Solo letras (para nombres)
+        noNumbers: /^[a-zA-Z\sñÑáéíóúÁÉÍÓÚ]+$/
     };
 
-    // --- Función helper para mostrar feedback ---
-    function showFeedback(element, message, isValid) {
-        element.textContent = message;
-        element.className = 'feedback-msg'; // Reset
-        if (message) {
-            element.classList.add(isValid ? 'valid' : 'invalid');
+    // --- Funciones de Utilidad ---
+
+    // Muestra error en un campo específico
+    function setError(input, message, feedbackId) {
+        const feedback = document.getElementById(feedbackId);
+        if (input) {
+            input.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            input.classList.remove('border-green-500');
         }
+        if (feedback) {
+            feedback.textContent = message;
+            feedback.className = "text-xs text-red-500 mt-1 font-medium block h-auto";
+        }
+        return false; // Retorna falso para indicar error
     }
 
-    // --- FORMULARIO PERSONA ---
-    const formPerson = document.getElementById("form-person");
-    if (formPerson) {
-        const firstName = document.getElementById("id_person_first_name");
-        const middleName = document.getElementById("id_person_middle_name");
-        const firstSurname = document.getElementById("id_person_first_surname");
-        const secondSurname = document.getElementById("id_person_second_surname");
-        const curp = document.getElementById("id_person_curp");
-        const email = document.getElementById("id_person_email");
-        const phone = document.getElementById("id_person_phone");
-        const password = document.getElementById("id_person_password");
-        const confirmPassword = document.getElementById("id_confirm_person_password");
+    // Marca un campo como válido
+    function setSuccess(input, feedbackId) {
+        const feedback = document.getElementById(feedbackId);
+        if (input) {
+            input.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            input.classList.add('border-green-500');
+        }
+        if (feedback) {
+            feedback.textContent = "";
+        }
+        return true;
+    }
+
+    // Validador de Fuerza de Contraseña
+    function checkStrength(password, barId, feedbackId) {
+        const bar = document.getElementById(barId);
+        const feedback = document.getElementById(feedbackId);
+        if (!bar) return false;
+
+        let score = 0;
+        if (password.length > 6) score++;
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+
+        // Resetear clases base
+        bar.className = 'h-full transition-all duration-300 rounded-full';
         
-        const fnameFeedback = document.getElementById("fname-feedback");
-        const mnameFeedback = document.getElementById("mname-feedback");
-        const fsurnameFeedback = document.getElementById("fsurname-feedback");
-        const ssurnameFeedback = document.getElementById("ssurname-feedback");
-        const curpFeedback = document.getElementById("curp-feedback");
-        const emailFeedback = document.getElementById("email-feedback");
-        const phoneFeedback = document.getElementById("phone-feedback");
-        const passwordFeedback = document.getElementById("password-feedback");
-        const confirmPasswordFeedback = document.getElementById("confirm-password-feedback");
-        const strengthBar = document.getElementById("password-strength-bar")?.querySelector('.bar');
+        if (password.length === 0) {
+            bar.style.width = '0%';
+            if(feedback) feedback.textContent = '';
+            return false;
+        }
 
-        // Validar Nombres (sin números)
-        firstName?.addEventListener("input", () => {
-            const valid = REGEX.noNumbers.test(firstName.value);
-            showFeedback(fnameFeedback, valid || !firstName.value ? "" : "El nombre no debe contener números.", valid);
-        });
-        middleName?.addEventListener("input", () => {
-            const valid = REGEX.noNumbers.test(middleName.value);
-            showFeedback(mnameFeedback, valid || !middleName.value ? "" : "El nombre no debe contener números.", valid);
-        });
-        firstSurname?.addEventListener("input", () => {
-            const valid = REGEX.noNumbers.test(firstSurname.value);
-            showFeedback(fsurnameFeedback, valid || !firstSurname.value ? "" : "El apellido no debe contener números.", valid);
-        });
-        secondSurname?.addEventListener("input", () => {
-            const valid = REGEX.noNumbers.test(secondSurname.value);
-            showFeedback(ssurnameFeedback, valid || !secondSurname.value ? "" : "El apellido no debe contener números.", valid);
-        });
+        let isValid = false;
+        if (score <= 2) {
+            bar.style.width = '30%';
+            bar.classList.add('bg-red-500');
+            if(feedback) { feedback.textContent = 'Débil'; feedback.className = 'text-xs mt-1 text-red-500 font-bold block'; }
+        } else if (score <= 4) {
+            bar.style.width = '70%';
+            bar.classList.add('bg-yellow-400');
+            if(feedback) { feedback.textContent = 'Media'; feedback.className = 'text-xs mt-1 text-yellow-600 font-bold block'; }
+            isValid = true; // Aceptamos media como válida
+        } else {
+            bar.style.width = '100%';
+            bar.classList.add('bg-green-500');
+            if(feedback) { feedback.textContent = 'Fuerte'; feedback.className = 'text-xs mt-1 text-green-600 font-bold block'; }
+            isValid = true;
+        }
+        return isValid;
+    }
 
-        // Validar Teléfono (solo números)
-        phone?.addEventListener("input", () => {
-            const valid = REGEX.onlyNumbers.test(phone.value);
-            showFeedback(phoneFeedback, valid || !phone.value ? "" : "El teléfono debe contener solo números.", valid);
-        });
+    // --- Validadores del Formulario Persona ---
+    function validatePersonForm() {
+        let isValid = true;
+
+        const name = document.getElementById('id_person_first_name');
+        const email = document.getElementById('id_person_email');
+        const curp = document.getElementById('id_person_curp');
+        const pass = document.getElementById('id_person_password');
+        const confirm = document.getElementById('id_confirm_person_password');
+
+        // Validar Nombre
+        if (!name.value.trim()) isValid = setError(name, "El nombre es obligatorio", "person-name-feedback") && isValid;
+        else if (!REGEX.noNumbers.test(name.value)) isValid = setError(name, "No debe contener números", "person-name-feedback") && isValid;
+        else setSuccess(name, "person-name-feedback");
 
         // Validar Email
-        email?.addEventListener("input", () => {
-            const valid = REGEX.email.test(email.value);
-            showFeedback(emailFeedback, valid || !email.value ? "" : "Formato de correo no válido.", valid);
-        });
+        if (!REGEX.email.test(email.value)) isValid = setError(email, "Correo inválido", "person-email-feedback") && isValid;
+        else setSuccess(email, "person-email-feedback");
 
         // Validar CURP
-        curp?.addEventListener("input", () => {
-            const valid = REGEX.curp.test(curp.value.toUpperCase());
-            showFeedback(curpFeedback, valid || !curp.value ? "" : "Formato de CURP no válido.", valid);
-        });
+        if (!REGEX.curp.test(curp.value.toUpperCase())) isValid = setError(curp, "CURP inválida (verifique formato)", "curp-feedback") && isValid;
+        else setSuccess(curp, "curp-feedback");
 
-        // Validar Seguridad de Contraseña
-        password?.addEventListener("input", () => {
-            const value = password.value;
-            let score = 0;
-            if (value.length >= 8) score++;
-            if (/[A-Z]/.test(value)) score++;
-            if (/[a-z]/.test(value)) score++;
-            if (/[0-9]/.test(value)) score++;
-            if (/[^A-Za-z0-9]/.test(value)) score++;
+        // Validar Contraseña (Fuerza)
+        const isStrong = checkStrength(pass.value, "person-strength-bar", "person-password-feedback");
+        if (!isStrong) {
+            setError(pass, "La contraseña es muy débil (Min 8 caracteres, Mayúscula y Número)", "person-password-feedback");
+            isValid = false;
+        } 
 
-            strengthBar.className = 'bar'; // Reset
-            let feedbackMsg = "";
+        // Validar Confirmación
+        if (pass.value !== confirm.value) isValid = setError(confirm, "Las contraseñas no coinciden", "person-confirm-feedback") && isValid;
+        else if (!confirm.value) isValid = setError(confirm, "Confirma tu contraseña", "person-confirm-feedback") && isValid;
+        else setSuccess(confirm, "person-confirm-feedback");
 
-            if (value.length === 0) {
-                // No mostrar nada si está vacío
-            } else if (score <= 2) {
-                strengthBar.classList.add('weak');
-                feedbackMsg = "Contraseña débil.";
-            } else if (score <= 4) {
-                strengthBar.classList.add('medium');
-                feedbackMsg = "Contraseña media.";
-            } else {
-                strengthBar.classList.add('strong');
-                feedbackMsg = "Contraseña fuerte.";
-            }
-            showFeedback(passwordFeedback, feedbackMsg, score > 2);
-            validatePasswordMatch(); // Re-validar la confirmación
-        });
-
-        // Validar Coincidencia de Contraseña
-        function validatePasswordMatch() {
-            if (!confirmPassword) return;
-            const valid = password.value === confirmPassword.value;
-            showFeedback(confirmPasswordFeedback, valid || !confirmPassword.value ? "" : "Las contraseñas no coinciden.", valid);
-        }
-        confirmPassword?.addEventListener("input", validatePasswordMatch);
+        return isValid;
     }
 
-    // --- FORMULARIO INSTITUCIÓN ---
-    const formInstitution = document.getElementById("form-institution");
-    if (formInstitution) {
-        const rfc = document.getElementById("id_institution_rfc");
-        const email = document.getElementById("id_institution_email");
-        const password = document.getElementById("id_institution_password");
-        const confirmPassword = document.getElementById("id_confirm_institution_password");
+    // --- Validadores del Formulario Institución ---
+    function validateInstitutionForm() {
+        let isValid = true;
 
-        const rfcFeedback = document.getElementById("rfc-feedback");
-        const emailFeedback = document.getElementById("inst-email-feedback");
-        const passwordFeedback = document.getElementById("inst-password-feedback");
-        const confirmPasswordFeedback = document.getElementById("inst-confirm-password-feedback");
-        const strengthBar = document.getElementById("inst-password-strength-bar")?.querySelector('.bar');
-        
-        // Validar RFC
-        rfc?.addEventListener("input", () => {
-            const valid = REGEX.rfc.test(rfc.value.toUpperCase());
-            showFeedback(rfcFeedback, valid || !rfc.value ? "" : "Formato de RFC no válido.", valid);
-        });
+        const name = document.getElementById('id_institution_name');
+        const rfc = document.getElementById('id_institution_rfc');
+        const email = document.getElementById('id_institution_email');
+        const pass = document.getElementById('id_institution_password');
+        const confirm = document.getElementById('id_confirm_institution_password');
 
-        // Validar Email de Institución
-        email?.addEventListener("input", () => {
-            const valid = REGEX.email.test(email.value);
-            showFeedback(emailFeedback, valid || !email.value ? "" : "Formato de correo no válido.", valid);
-        });
+        if (!name.value.trim()) isValid = setError(name, "Nombre requerido", "inst-name-feedback") && isValid;
+        else setSuccess(name, "inst-name-feedback");
 
-        // Validar Seguridad de Contraseña de Institución
-        password?.addEventListener("input", () => {
-            const value = password.value;
-            let score = 0;
-            if (value.length >= 8) score++;
-            if (/[A-Z]/.test(value)) score++;
-            if (/[a-z]/.test(value)) score++;
-            if (/[0-9]/.test(value)) score++;
-            if (/[^A-Za-z0-9]/.test(value)) score++;
+        if (!REGEX.rfc.test(rfc.value.toUpperCase())) isValid = setError(rfc, "RFC inválido", "rfc-feedback") && isValid;
+        else setSuccess(rfc, "rfc-feedback");
 
-            strengthBar.className = 'bar'; // Reset
-            let feedbackMsg = "";
+        if (!REGEX.email.test(email.value)) isValid = setError(email, "Correo inválido", "inst-email-feedback") && isValid;
+        else setSuccess(email, "inst-email-feedback");
 
-            if (value.length === 0) {
-                // No mostrar nada si está vacío
-            } else if (score <= 2) {
-                strengthBar.classList.add('weak');
-                feedbackMsg = "Contraseña débil.";
-            } else if (score <= 4) {
-                strengthBar.classList.add('medium');
-                feedbackMsg = "Contraseña media.";
-            } else {
-                strengthBar.classList.add('strong');
-                feedbackMsg = "Contraseña fuerte.";
-            }
-            showFeedback(passwordFeedback, feedbackMsg, score > 2);
-            validatePasswordMatch(); // Re-validar la confirmación
-        });
-
-        // Validar Coincidencia de Contraseña de Institución
-        function validatePasswordMatch() {
-            if (!confirmPassword) return;
-            const valid = password.value === confirmPassword.value;
-            showFeedback(confirmPasswordFeedback, valid || !confirmPassword.value ? "" : "Las contraseñas no coinciden.", valid);
+        const isStrong = checkStrength(pass.value, "inst-strength-bar", "inst-password-feedback");
+        if (!isStrong) {
+            setError(pass, "Contraseña débil", "inst-password-feedback");
+            isValid = false;
         }
-        confirmPassword?.addEventListener("input", validatePasswordMatch);
+
+        if (pass.value !== confirm.value) isValid = setError(confirm, "No coinciden", "inst-confirm-feedback") && isValid;
+        else if(!confirm.value) isValid = setError(confirm, "Requerido", "inst-confirm-feedback") && isValid;
+        else setSuccess(confirm, "inst-confirm-feedback");
+
+        return isValid;
+    }
+
+    // --- EVENT LISTENERS (Conexión con el HTML) ---
+
+    // 1. Configurar Formulario Persona
+    const formPerson = document.getElementById('form-person');
+    if (formPerson) {
+        // Bloquear envío si falla validación
+        formPerson.addEventListener('submit', (e) => {
+            if (!validatePersonForm()) {
+                e.preventDefault(); // ¡IMPORTANTE! Esto detiene el envío
+                console.log("Formulario Persona inválido");
+            }
+        });
+
+        // Feedback en tiempo real para contraseña
+        const pPass = document.getElementById('id_person_password');
+        const pConf = document.getElementById('id_confirm_person_password');
+        
+        if (pPass) {
+            pPass.addEventListener('input', () => {
+                checkStrength(pPass.value, "person-strength-bar", "person-password-feedback");
+                // Si ya escribió confirmación, validar coincidencia al vuelo
+                if(pConf.value) { 
+                    if(pPass.value !== pConf.value) setError(pConf, "Las contraseñas no coinciden", "person-confirm-feedback");
+                    else setSuccess(pConf, "person-confirm-feedback");
+                }
+            });
+        }
+
+        if (pConf) {
+            pConf.addEventListener('input', () => {
+                if(pPass.value !== pConf.value) setError(pConf, "Las contraseñas no coinciden", "person-confirm-feedback");
+                else setSuccess(pConf, "person-confirm-feedback");
+            });
+        }
+    }
+
+    // 2. Configurar Formulario Institución
+    const formInst = document.getElementById('form-institution');
+    if (formInst) {
+        formInst.addEventListener('submit', (e) => {
+            if (!validateInstitutionForm()) {
+                e.preventDefault();
+                console.log("Formulario Institución inválido");
+            }
+        });
+
+        const iPass = document.getElementById('id_institution_password');
+        const iConf = document.getElementById('id_confirm_institution_password');
+
+        if (iPass) {
+            iPass.addEventListener('input', () => {
+                checkStrength(iPass.value, "inst-strength-bar", "inst-password-feedback");
+                if(iConf.value) {
+                    if(iPass.value !== iConf.value) setError(iConf, "No coinciden", "inst-confirm-feedback");
+                    else setSuccess(iConf, "inst-confirm-feedback");
+                }
+            });
+        }
+
+        if (iConf) {
+            iConf.addEventListener('input', () => {
+                if(iPass.value !== iConf.value) setError(iConf, "No coinciden", "inst-confirm-feedback");
+                else setSuccess(iConf, "inst-confirm-feedback");
+            });
+        }
     }
 });

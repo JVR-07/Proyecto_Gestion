@@ -1,7 +1,7 @@
 import re
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Post, Category, MeasurementUnit, Warehouse, InventoryItem
+from .models import Post, Category, MeasurementUnit, Warehouse, InventoryItem, Report
 
 # --- Funciones de Validación Reutilizables ---
 
@@ -234,3 +234,18 @@ class PostForm(forms.ModelForm):
                 self.add_error('warehouse', "Este almacén no tiene este producto.")
 
         return cleaned_data
+
+class ReportForm(forms.ModelForm):
+    class Meta:
+        model = Report
+        fields = ['reason']
+        labels = {
+            'reason': 'Describe el problema con esta publicación'
+        }
+        widgets = {
+            'reason': forms.Textarea(attrs={
+                'class': 'w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none',
+                'rows': 3,
+                'placeholder': 'Ej. Es contenido ofensivo, fraudulento o spam...'
+            })
+        }

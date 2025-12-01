@@ -16,6 +16,20 @@
 
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
         
+        <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+        {% if messages %}
+            {% for message in messages %}
+                 <div class="toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md bg-green-500/95 border-green-700">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Notificación</span>
+                        <span class="font-medium text-sm leading-snug">{{ message }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 text-white/70 hover:text-white">✕</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        </div>
+
         <div class="hidden md:block w-1/3 bg-brand-600 p-8 text-white flex flex-col justify-between">
             <div>
                 <h1 class="text-3xl font-bold mb-4">SDC</h1>
@@ -38,31 +52,55 @@
                 </button>
             </div>
 
-            {% if messages %}
-                <div class="mb-4">
-                    {% for message in messages %}
-                        <div class="p-3 rounded bg-blue-50 text-blue-700 text-sm">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
             <form id="form-person" class="form space-y-4" method="POST" novalidate>
                 {% csrf_token %}
+                
                 <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
                         {{ person_form.person_first_name.label_tag }}
                         {{ person_form.person_first_name }}
-                    </div>
+                        <p id="person-name-feedback" class="h-4"></p> </div>
                     <div class="space-y-1">
                         {{ person_form.person_first_surname.label_tag }}
                         {{ person_form.person_first_surname }}
                     </div>
                 </div>
                 
-                <div class="space-y-1">{{ person_form.person_email.label_tag }} {{ person_form.person_email }}</div>
-                <div class="space-y-1">{{ person_form.person_password.label_tag }} {{ person_form.person_password }}</div>
-                <div class="h-1 w-full bg-gray-200 rounded overflow-hidden mt-1">
-                    <div id="password-strength-bar" class="h-full bg-green-500 w-0 transition-all duration-500"></div>
+                <div class="space-y-1">
+                    {{ person_form.person_email.label_tag }} 
+                    {{ person_form.person_email }}
+                    <p id="person-email-feedback" class="h-4"></p> </div>
+
+                <div class="space-y-1">
+                    {{ person_form.person_curp.label_tag }} 
+                    {{ person_form.person_curp }}
+                    <p id="curp-feedback" class="h-4"></p> </div>
+                
+                <div class="space-y-1">
+                    {{ person_form.person_password.label_tag }}
+                    <div class="relative">
+                        {{ person_form.person_password }}
+                        <button type="button" onclick="togglePassword('id_person_password', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-brand-600">
+                            <svg class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <svg class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                        </button>
+                    </div>
+                    <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mt-2">
+                        <div id="person-strength-bar" class="h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <p id="person-password-feedback" class="h-4"></p>
+                </div>
+
+                <div class="space-y-1">
+                    {{ person_form.confirm_person_password.label_tag }}
+                    <div class="relative">
+                        {{ person_form.confirm_person_password }}
+                        <button type="button" onclick="togglePassword('id_confirm_person_password', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-brand-600">
+                            <svg class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <svg class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                        </button>
+                    </div>
+                    <p id="person-confirm-feedback" class="text-xs text-red-500 mt-1 h-4"></p>
                 </div>
 
                 <div class="pt-2">{{ person_form.user_type }}</div>
@@ -74,10 +112,48 @@
 
             <form id="form-institution" class="form hidden space-y-4" method="POST" novalidate>
                 {% csrf_token %}
-                <div class="space-y-1">{{ institution_form.institution_name.label_tag }} {{ institution_form.institution_name }}</div>
-                <div class="space-y-1">{{ institution_form.institution_rfc.label_tag }} {{ institution_form.institution_rfc }}</div>
-                <div class="space-y-1">{{ institution_form.institution_email.label_tag }} {{ institution_form.institution_email }}</div>
-                <div class="space-y-1">{{ institution_form.institution_password.label_tag }} {{ institution_form.institution_password }}</div>
+                <div class="space-y-1">
+                    {{ institution_form.institution_name.label_tag }} 
+                    {{ institution_form.institution_name }}
+                    <p id="inst-name-feedback" class="h-4"></p>
+                </div>
+                <div class="space-y-1">
+                    {{ institution_form.institution_rfc.label_tag }} 
+                    {{ institution_form.institution_rfc }}
+                    <p id="rfc-feedback" class="h-4"></p>
+                </div>
+                <div class="space-y-1">
+                    {{ institution_form.institution_email.label_tag }} 
+                    {{ institution_form.institution_email }}
+                    <p id="inst-email-feedback" class="h-4"></p>
+                </div>
+                
+                <div class="space-y-1">
+                    {{ institution_form.institution_password.label_tag }}
+                    <div class="relative">
+                        {{ institution_form.institution_password }}
+                        <button type="button" onclick="togglePassword('id_institution_password', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-brand-600">
+                            <svg class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <svg class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                        </button>
+                    </div>
+                    <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mt-2">
+                        <div id="inst-strength-bar" class="h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <p id="inst-password-feedback" class="h-4"></p>
+                </div>
+
+                <div class="space-y-1">
+                    {{ institution_form.confirm_institution_password.label_tag }}
+                    <div class="relative">
+                        {{ institution_form.confirm_institution_password }}
+                        <button type="button" onclick="togglePassword('id_confirm_institution_password', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-brand-600">
+                            <svg class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <svg class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                        </button>
+                    </div>
+                    <p id="inst-confirm-feedback" class="text-xs text-red-500 mt-1 h-4"></p>
+                </div>
 
                 <button type="submit" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-gray-700 transition mt-4">
                     Registrar Institución
@@ -94,30 +170,87 @@
         /* Inputs generados por Django */
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
+            padding-right: 2.5rem; 
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background-color: #f9fafb;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            color: #1f2937;
+            transition: all 0.2s;
         }
         input:focus, select:focus {
-            outline: 2px solid #0ea5e9;
+            outline: none;
+            border-color: #0ea5e9;
             background-color: white;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
         }
-        label { font-size: 0.85rem; font-weight: 600; color: #374151; }
-
-        /* Clases para el JS de Tabs */
-        .tab.active {
-            background-color: white;
-            color: #0ea5e9; /* brand-500 */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+        label { font-size: 0.85rem; font-weight: 600; color: #4b5563; }
+        
+        .tab.active { background-color: white; color: #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .form { display: none; }
         .form.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 
     <script src="{% static 'login/scripts/register-tab-logic.js' %}"></script>
-    <script src="{% static 'login/scripts/register-validation.js' %}"></script>
+    <script src="{% static 'login/scripts/register-validation.js' %}?v=1"></script>
+    
+    <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const eyeOpen = btn.querySelector('.eye-open');
+            const eyeClosed = btn.querySelector('.eye-closed');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                input.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        }
+    </script>
+
+    <script>
+        // ... (Pegar aquí las funciones dismissToast y showFloatingToast del paso 1) ...
+        // Asegúrate de que login-logic.js pueda llamar a showFloatingToast
+        
+        function dismissToast(element) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(20px)';
+            setTimeout(() => element.remove(), 300);
+        }
+        
+        function showFloatingToast(message, type = 'info') {
+            const container = document.getElementById('toast-container') || createToastContainer();
+            const colors = {
+                'error': 'bg-red-500/95 border-red-700',
+                'success': 'bg-green-500/95 border-green-700'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md transition-all duration-500 transform translate-x-full opacity-0 ${colors[type] || colors['success']}`;
+            toast.innerHTML = `<div class="flex flex-col"><span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">${type === 'error' ? 'Error' : 'Info'}</span><span class="font-medium text-sm leading-snug">${message}</span></div><button onclick="dismissToast(this.parentElement)" class="ml-4 text-white">✕</button>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+            setTimeout(() => dismissToast(toast), 15000);
+        }
+        
+        function createToastContainer() {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            div.className = "fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm pointer-events-none";
+            document.body.appendChild(div);
+            return div;
+        }
+        
+        // Inicializar los mensajes que vienen del servidor (ej. Registro exitoso)
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(t => setTimeout(() => dismissToast(t), 15000));
+        });
+    </script>
 </body>
 </html>

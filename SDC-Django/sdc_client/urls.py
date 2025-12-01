@@ -22,6 +22,8 @@ urlpatterns = [
     path('donor_feed', views.donor_feed, name='donor_feed'),
     path('institution_feed', views.institution_feed, name='institution_feed'),
     path('post/<int:post_id>/interact/', views.create_transaction, name='create_transaction'),
+    path('institutions/', views.institution_list_view, name='institution_list'),
+    path('post/<int:post_id>/report/', views.report_post, name='report_post'),
 
     # --- API Endpoints para Autenticación ---
     

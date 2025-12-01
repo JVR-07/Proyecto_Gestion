@@ -10,6 +10,20 @@
 </head>
 <body class="bg-gray-50 flex items-center justify-center h-screen font-[Inter]">
 
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+        {% if messages %}
+            {% for message in messages %}
+                 <div class="toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md bg-green-500/95 border-green-700">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">Notificación</span>
+                        <span class="font-medium text-sm leading-snug">{{ message }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 text-white/70 hover:text-white">✕</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-[#0077B6] font-[Poppins] mb-2">SDC</h1>
@@ -21,13 +35,25 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
                 <input type="email" name="email" id="email-input" required 
-                    class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent outline-none transition">
+                    class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent outline-none transition text-gray-800">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                <input type="password" name="password" id="password-input" required 
-                    class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent outline-none transition">
+                <div class="relative">
+                    <input type="password" name="password" id="password-input" required 
+                        class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent outline-none transition text-gray-800 pr-12">
+                    
+                    <button type="button" onclick="togglePassword('password-input', this)" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-[#0077B6] transition">
+                        <svg class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <button type="submit" 
@@ -44,5 +70,57 @@
     </div>
 
     <script src="{% static 'login/scripts/login-logic.js' %}"></script>
+    <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const eyeOpen = btn.querySelector('.eye-open');
+            const eyeClosed = btn.querySelector('.eye-closed');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                input.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        }
+    </script>
+
+    <script>
+        function dismissToast(element) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(20px)';
+            setTimeout(() => element.remove(), 300);
+        }
+        
+        function showFloatingToast(message, type = 'info') {
+            const container = document.getElementById('toast-container') || createToastContainer();
+            const colors = {
+                'error': 'bg-red-500/95 border-red-700',
+                'success': 'bg-green-500/95 border-green-700'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast-message pointer-events-auto shadow-lg rounded-xl p-4 border-l-4 text-white flex justify-between items-start backdrop-blur-md transition-all duration-500 transform translate-x-full opacity-0 ${colors[type] || colors['success']}`;
+            toast.innerHTML = `<div class="flex flex-col"><span class="font-bold text-xs uppercase tracking-wider mb-1 opacity-80">${type === 'error' ? 'Error' : 'Info'}</span><span class="font-medium text-sm leading-snug">${message}</span></div><button onclick="dismissToast(this.parentElement)" class="ml-4 text-white">✕</button>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+            setTimeout(() => dismissToast(toast), 15000);
+        }
+        
+        function createToastContainer() {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            div.className = "fixed top-5 right-5 z-50 flex flex-col gap-3 w-full max-w-sm pointer-events-none";
+            document.body.appendChild(div);
+            return div;
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(t => setTimeout(() => dismissToast(t), 15000));
+        });
+    </script>
 </body>
 </html>

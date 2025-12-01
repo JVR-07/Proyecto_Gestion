@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
+from django.utils import timezone
 
 # Modulos creados por nosotros
 from .models import (
     Status, CustomUser, Donee, Donor, Institution,
     Category, Post, Transaction, Warehouse, InventoryItem,
-    MeasurementUnit
+    MeasurementUnit, Report
 )
 
 # Register your models here.
@@ -66,15 +67,58 @@ def approve_warehouse_transaction(modeladmin, request, queryset):
         except Exception as e:
             messages.error(request, f'Error al aprobar "{transaction}": {e}')
 
+@admin.action(description='Rechazar transacciones seleccionadas')
+def reject_transactions(modeladmin, request, queryset):
+    """
+    Marca las transacciones como rechazadas.
+    Esto libera la cantidad 'pendiente' en la publicación.
+    """
+    updated_count = queryset.update(status=Transaction.TransactionStatus.REJECTED)
+    messages.success(request, f"{updated_count} transacciones han sido rechazadas.")
+
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ('post', 'participant', 'status', 'quantity_committed', 'created_at')
     list_filter = ('status', 'post__category')
     search_fields = ('post__title', 'participant__email')
 
-    # agregar las acciones personalizadas
-    actions = [approve_personal_transaction, approve_warehouse_transaction]
+    actions = [approve_personal_transaction, approve_warehouse_transaction, reject_transactions]
 
+@admin.action(description='VALIDAR Reporte (Eliminar Publicación)')
+def validate_report_and_delete_post(modeladmin, request, queryset):
+    """
+    Si el reporte es válido:
+    1. Marca el reporte como VALIDATED.
+    2. Marca la publicación asociada como CANCELLED (Soft Delete).
+    """
+    for report in queryset:
+        if report.status == Report.ReportStatus.PENDING:
+            post = report.post
+            post.status = Post.PostStatus.CANCELLED
+            post.save()
+            
+            report.status = Report.ReportStatus.VALIDATED
+            report.resolved_at = timezone.now()
+            report.save()
+    
+    messages.success(request, "Reportes validados. Las publicaciones asociadas han sido canceladas.")
+
+@admin.action(description='RECHAZAR Reporte (Conservar Publicación)')
+def reject_report(modeladmin, request, queryset):
+    """
+    Si el reporte es falso/spam:
+    1. Marca el reporte como REJECTED.
+    2. No toca la publicación.
+    """
+    queryset.update(status=Report.ReportStatus.REJECTED, resolved_at=timezone.now())
+    messages.info(request, "Reportes rechazados. Las publicaciones permanecen activas.")
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+    list_display = ('post', 'reporter', 'created_at', 'status')
+    list_filter = ('status', 'created_at')
+    search_fields = ('reason', 'post__title', 'reporter__email')
+    actions = [validate_report_and_delete_post, reject_report]
 
 admin.site.register(CustomUser)
 admin.site.register(Status)

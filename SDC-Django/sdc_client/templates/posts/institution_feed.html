@@ -16,7 +16,7 @@
               </div>
               <div class="text-left">
                 <h2 class="font-bold text-gray-900 text-lg">Mis Publicaciones</h2>
-                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Publicaciones</p>
               </div>
             </div>
 
@@ -25,7 +25,11 @@
             <div class="space-y-2">
                 {% for post in my_posts|slice:":4" %}
                 <div class="group flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 mb-2 shadow-sm hover:shadow">
-                    
+                    {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                        <span class="h-3 w-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0 mr-2"></span>
+                    {% else %}
+                        <span class="h-3 w-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0 mr-2"></span>
+                    {% endif %}
                     <div class="flex-grow min-w-0 cursor-pointer mr-3" onclick="window.location.href='{% url 'edit_post' post.id %}'">
                         <div class="flex justify-between items-start">
                             <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
@@ -36,16 +40,11 @@
                     </div>
 
                     <div class="flex items-center gap-1 opacity-0 lg:opacity-100 group-hover:opacity-100 transition-opacity">
-                        {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
-                                <span class="h-2 w-2 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></span>
-                            {% else %}
-                                <span class="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></span>
-                            {% endif %}
+                        {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
                         <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         </a>
-                        {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
-                        <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
+                        <button onclick="event.stopPropagation(); openDeleteModal('{% url 'close_post' post.id %}')" 
                                 class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
@@ -79,7 +78,7 @@
                       </div>
                       <div class="text-left">
                         <h2 class="font-bold text-gray-900 text-lg">Mis Publicaciones</h2>
-                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Activas</p>
+                        <p class="text-xs text-brand-600 font-medium">{{ my_posts.count }} Publicaciones</p>
                       </div>
                     </div>
                     <svg id="chevron-icon" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +90,11 @@
                      <div class="p-3 space-y-2 max-h-60 overflow-y-auto">
                         {% for post in my_posts %}
                             <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-transparent shadow-sm">
+                                {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
+                                    <span class="h-3 w-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0 mr-2"></span>
+                                {% else %}
+                                    <span class="h-3 w-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0 mr-2"></span>
+                                {% endif %}
                                 <div class="overflow-hidden flex-grow cursor-pointer" onclick="window.location.href='{% url 'edit_post' post.id %}'">
                                     <div class="flex justify-between items-start">
                                         <p class="text-sm font-semibold text-gray-800 truncate pr-2">{{ post.title }}</p>
@@ -100,16 +104,11 @@
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-1 opacity-100 lg:opacity-100 group-hover:opacity-100 transition-opacity">
-                                    {% if post.status == 'COMPLETED' or post.status == 'CANCELLED' %}
-                                            <span class="h-2 w-2 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></span>
-                                        {% else %}
-                                            <span class="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></span>
-                                        {% endif %}
+                                    {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
                                     <a href="{% url 'edit_post' post.id %}" class="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                     </a>
-                                    {% if post.status == 'ACTIVE' or post.status == 'IN_PROGRESS' %}
-                                    <button onclick="event.stopPropagation(); if(confirm('¿Cerrar publicación?')) window.location.href='{% url 'close_post' post.id %}'" 
+                                    <button onclick="event.stopPropagation(); openDeleteModal('{% url 'close_post' post.id %}')" 
                                             class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
@@ -138,6 +137,13 @@
                 <span class="{% if post.post_type == 'OFFER' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %} text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                     {{ post.get_post_type_display }}
                 </span>
+                <button onclick="openReportModal('{% url 'report_post' post.id %}', '{{ post.title|escapejs }}')" 
+                    class="bg-white/90 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full shadow-sm backdrop-blur-sm transition z-10"
+                    title="Reportar publicación">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </button>
             </div>
 
             <div class="p-6 pb-4">
@@ -155,14 +161,27 @@
                     {{ post.description }}
                 </p>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                    <div class="bg-slate-50 p-2 rounded-lg text-center border border-slate-100">
-                        <span class="block text-[10px] text-gray-400 uppercase font-bold">Categoría</span>
-                        <span class="text-sm font-semibold text-gray-700 truncate">{{ post.category.name }}</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
+                    <div class="bg-white p-2 rounded-lg text-center border border-gray-200 shadow-sm">
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Categoría</span>
+                        <span class="text-sm font-semibold text-gray-800 truncate">{{ post.category.name }}</span>
                     </div>
-                    <div class="bg-brand-50 p-2 rounded-lg text-center border border-brand-100 col-span-2">
-                        <span class="block text-[10px] text-brand-400 uppercase font-bold">Disponible / Pendiente</span>
-                        <span class="text-sm font-bold text-brand-700">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
+                    <div class="bg-white p-2 rounded-lg text-center border border-gray-200 shadow-sm">
+                        {% if post.get_post_type_display == "Solicitud" %}
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Solicitado</span>
+                        {% else %}
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">Ofertado</span>
+                        {% endif %}
+                        <span class="text-sm font-semibold text-gray-800">{{ post.quantity|floatformat:0 }}</span>
+                    </div>
+                    <div class="bg-amber-50 p-2 rounded-lg text-center border border-amber-200 col-span-2 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+                        {% if post.get_post_type_display == "Solicitud" %}
+                        <span class="block text-[10px] text-amber-600 uppercase font-bold tracking-wider">Falta por cubrir</span>
+                        {% else %}
+                        <span class="block text-[10px] text-amber-600 uppercase font-bold tracking-wider">Disponible</span>
+                        {% endif %}
+                        <span class="text-sm font-bold text-amber-800">{{ post.quantity_remaining|floatformat:2 }} {{ post.unit.symbol }}</span>
                     </div>
                 </div>
             </div>
@@ -182,7 +201,7 @@
                 </form>
                 {% else %}
                 <div class="text-center text-sm font-bold text-gray-500 py-2 bg-gray-100 rounded-lg">
-                    🔒 Completado
+                    ¡Completado! 🎉
                 </div>
                 {% endif %}
             </div>
@@ -198,4 +217,49 @@
         {% endfor %}
     </div>
 </div>
+
+<div id="reportModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" onclick="closeReportModal()"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg">
+                    <form id="reportForm" method="POST" action="">
+                        {% csrf_token %}
+                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                    <h3 class="text-lg font-semibold leading-6 text-gray-900">Reportar Publicación</h3>
+                                    <p id="reportPostTitle" class="text-sm text-gray-500 mt-1 italic mb-4"></p>
+                                    
+                                    <textarea name="reason" rows="3" required 
+                                              class="w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6 p-2"
+                                              placeholder="Describe por qué reportas esto (spam, fraude, ofensivo...)"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                            <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto">Enviar Reporte</button>
+                            <button type="button" onclick="closeReportModal()" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function openReportModal(url, title) {
+         document.getElementById('reportForm').action = url;
+        document.getElementById('reportPostTitle').textContent = `"${title}"`;
+        document.getElementById('reportModal').classList.remove('hidden');
+    }
+    function closeReportModal() {
+        document.getElementById('reportModal').classList.add('hidden');
+    }
+</script>
 {% endblock %}
