@@ -37,30 +37,64 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             redirect_url = 'home' 
-            try:
-                try:
-                    if request.user.institution:
-                        redirect_url = 'institution_feed'
-                        
-                        if post.post_type == Post.PostType.OFFER and post.warehouse:
-                            inventory_item = InventoryItem.objects.get(
-                                warehouse=post.warehouse, 
-                                category=post.category
-                            )
-                            inventory_item.quantity -= post.quantity
-                            inventory_item.save()
-                            
-                            messages.info(request, f"Se han reservado {post.quantity} del almacén '{post.warehouse.name}'.")
+            
+            # Variable de control para saber si encontramos un perfil válido
+            profile_found = False
 
-                except Institution.DoesNotExist:
-                        messages.error(request, 'Error: Tu perfil de usuario no está completo.')
-                        return redirect('home')
+            try:
+                # 1. Verificar si es Donatario
+                try:
+                    if request.user.donee:
+                        post.post_type = Post.PostType.REQUEST
+                        post.is_campaign = False 
+                        redirect_url = 'donee_feed'
+                        profile_found = True
+                except Donee.DoesNotExist:
+                    pass # No es donatario, continuamos
+
+                # 2. Verificar si es Donador (si no fue donatario)
+                if not profile_found:
+                    try:
+                        if request.user.donor:
+                            post.post_type = Post.PostType.OFFER
+                            post.is_campaign = False
+                            redirect_url = 'donor_feed'
+                            profile_found = True
+                    except Donor.DoesNotExist:
+                        pass # No es donador, continuamos
+
+                # 3. Verificar si es Institución (si no fue los anteriores)
+                if not profile_found:
+                    try:
+                        if request.user.institution:
+                            redirect_url = 'institution_feed'
+                            profile_found = True
+                            
+                            # Lógica de Inventario (Solo para Instituciones)
+                            if post.post_type == Post.PostType.OFFER and post.warehouse:
+                                inventory_item = InventoryItem.objects.get(
+                                    warehouse=post.warehouse, 
+                                    category=post.category
+                                )
+                                # (La validación de cantidad ya la hizo el form)
+                                inventory_item.quantity -= post.quantity
+                                inventory_item.save()
+                                messages.info(request, f"Se han reservado {post.quantity} del almacén '{post.warehouse.name}'.")
+
+                    except Institution.DoesNotExist:
+                        pass # No es institución
+
+                # 4. Verificación final
+                if not profile_found:
+                    messages.error(request, 'Error: Tu perfil de usuario no está completo.')
+                    return redirect('home')
 
                 post.save() 
                 messages.success(request, '¡Publicación creada con éxito!')
                 return redirect(redirect_url) 
             
             except InventoryItem.DoesNotExist:
+                # Este error solo salta si es Institución y falló la búsqueda de inventario
                 form.add_error(None, "Error crítico: No se encontró el inventario para reservar.")
             except Exception as e:
                 form.add_error(None, f"Error al procesar la publicación: {e}")
